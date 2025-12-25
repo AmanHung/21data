@@ -36,7 +36,7 @@
             <h1 class="text-white text-lg font-bold flex items-center cursor-pointer" @click="resetToHome">
                 <i class="fa-solid fa-capsules mr-2"></i> 藥品資料查詢
             </h1>
-            <button v-if="keyword || searchCode || searchTrade || searchComponent" @click="resetToHome" class="text-xs bg-teal-500 hover:bg-teal-400 text-white px-3 py-1 rounded-full transition border border-teal-400">
+            <button v-if="hasSearchQuery" @click="resetToHome" class="text-xs bg-teal-500 hover:bg-teal-400 text-white px-3 py-1 rounded-full transition border border-teal-400">
                 <i class="fa-solid fa-rotate-left mr-1"></i> 重置條件
             </button>
         </div>
@@ -151,7 +151,7 @@
     </main>
 
     <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
-        <div class="bg-white w-full max-w-md md:max-w-2xl h-[85vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
+        <div class="bg-white w-full max-w-md md:max-w-2xl h-[90vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
             <div class="flex justify-between items-start p-4 border-b bg-gray-50">
                 <div class="flex-1 pr-2 min-w-0">
                     <div v-if="selectedDrug.itemNo" class="text-[10px] text-gray-400 mb-1">項次: {{ selectedDrug.itemNo }}</div>
@@ -165,7 +165,7 @@
                 
                 <section class="bg-teal-50 rounded-xl p-4 border border-teal-100">
                     <h3 class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-2 border-b border-teal-200 pb-1">基本資料</h3>
-                    <div class="grid grid-cols-1 gap-2">
+                    <div class="space-y-3">
                         <div>
                             <span class="text-xs text-gray-500 block">英文商品名</span>
                             <span class="text-gray-900 font-bold select-all">{{ selectedDrug.tradeName }}</span>
@@ -173,6 +173,17 @@
                         <div>
                             <span class="text-xs text-gray-500 block">成份 (Component)</span>
                             <span class="text-gray-900 font-medium select-all">{{ selectedDrug.component || '-' }}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 pt-1">
+                            <div>
+                                <span class="text-xs text-gray-500 block">規格</span>
+                                <span class="text-gray-800 font-medium">{{ selectedDrug.spec || '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">單位</span>
+                                <span class="text-gray-800 font-medium">{{ selectedDrug.unit || '-' }}</span>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -186,10 +197,12 @@
                             <span class="text-xs text-gray-500 block mb-1">健保代碼</span>
                             <span class="text-blue-700 font-bold font-mono select-all">{{ selectedDrug.nhiCode || '-' }}</span>
                         </div>
-                        <div class="bg-gray-50 p-2 rounded">
-                            <span class="text-xs text-gray-500 block mb-1">藥品代碼</span>
-                            <span class="text-gray-700 font-bold font-mono select-all">{{ selectedDrug.code }}</span>
+                        
+                        <div class="bg-gray-50 p-2 rounded border-l-4 border-purple-400">
+                            <span class="text-xs text-gray-500 block mb-1">藥價差</span>
+                            <span class="text-gray-900 font-bold text-lg select-all">{{ selectedDrug.priceDiff }}</span>
                         </div>
+
                         <div class="bg-gray-50 p-2 rounded border-l-4 border-blue-400">
                             <span class="text-xs text-gray-500 block mb-1">健保價</span>
                             <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.nhiPrice ? '$' + selectedDrug.nhiPrice : '-' }}</span>
@@ -208,7 +221,7 @@
                     <div class="space-y-3">
                         <div v-if="selectedDrug.manufacturer">
                             <span class="text-xs text-gray-500 block">廠牌</span>
-                            <span class="text-gray-800 font-medium">{{ selectedDrug.manufacturer }}</span>
+                            <span class="text-gray-800 font-medium text-base">{{ selectedDrug.manufacturer }}</span>
                         </div>
                         <div v-if="selectedDrug.licenseHolder">
                             <span class="text-xs text-gray-500 block">許可證藥商簡稱</span>
@@ -241,13 +254,11 @@
     
     createApp({
         setup() {
-            // === 搜尋狀態 ===
             const keyword = ref('');
             const searchCode = ref('');
-            const searchTrade = ref(''); // 對應「英文商品名」
+            const searchTrade = ref('');
             const searchComponent = ref(''); 
-            // =============================
-
+            
             const drugs = ref([]);
             const selectedDrug = ref(null);
             const loading = ref(true);
@@ -255,13 +266,12 @@
             
             let fuse = null;
             
-            // Fuse.js 搜尋權重與欄位設定
             const fuseOptions = {
                 keys: [
                     { name: 'code', weight: 0.2 },        
                     { name: 'tradeName', weight: 0.4 },   
                     { name: 'component', weight: 0.3 }, 
-                    { name: 'nhiCode', weight: 0.2 }, // 加入健保碼搜尋
+                    { name: 'nhiCode', weight: 0.2 },
                     { name: 'manufacturer', weight: 0.1 },
                     { name: 'note', weight: 0.1 }
                 ],
@@ -289,42 +299,60 @@
             };
 
            const processData = (rawData) => {
-                // === 資料欄位對應 (Mapping) ===
                 let processed = rawData.map(row => {
-                    // 1. 藥品代碼 (必要)
                     const code = row['藥品代碼'] || row['Code'] || row['code'] || '';
                     if(!code) return null;
 
-                    // 2. 英文商品名
                     const tradeName = row['英文商品名'] || row['商品名'] || row['Trade Name'] || row['Name'] || '無英文商品名';
-
-                    // 3. 成份
                     const component = row['成份'] || row['成分'] || row['Component'] || '';
-
-                    // 4. 新增欄位
                     const itemNo = row['項次'] || '';
-                    const nhiPrice = row['健保價'] || '';
-                    const costPrice = row['成本價'] || '';
+                    
+                    // 價格與代碼
                     const nhiCode = row['健保代碼'] || '';
+                    const nhiPriceStr = row['健保價'] || '';
+                    const costPriceStr = row['成本價'] || '';
+                    
+                    // 規格與單位 (讀取 CSV)
+                    const spec = row['規格'] || '';
+                    const unit = row['單位'] || '';
+
+                    // 廠商資訊
                     const licenseHolder = row['許可證藥商簡稱'] || '';
                     const manufacturer = row['廠牌'] || '';
-
-                    // 其他
                     const note = row['備註'] || row['Note'] || '';
+
+                    // === 計算藥價差 ===
+                    let priceDiff = '-';
+                    // 移除可能的貨幣符號或逗號以進行計算
+                    const cleanNhi = parseFloat(nhiPriceStr.replace(/[$,]/g, ''));
+                    const cleanCost = parseFloat(costPriceStr.replace(/[$,]/g, ''));
+
+                    // 只有當兩者都是有效數字時才計算
+                    if (!isNaN(cleanNhi) && !isNaN(cleanCost)) {
+                        const diff = cleanNhi - cleanCost;
+                        // 取小數點後兩位，若為整數則不顯示小數點
+                        priceDiff = Number.isInteger(diff) ? diff.toString() : diff.toFixed(2);
+                        priceDiff = '$' + priceDiff; // 加個 $ 符號
+                    }
+                    // ==================
 
                     return {
                         code: code.trim(),
                         tradeName: tradeName.trim(),
                         component: component.trim(),
-                        
-                        // 新增的資料屬性
                         itemNo: itemNo.trim(),
-                        nhiPrice: nhiPrice.trim(),
-                        costPrice: costPrice.trim(),
+                        
+                        nhiPrice: nhiPriceStr.trim(),
+                        costPrice: costPriceStr.trim(),
                         nhiCode: nhiCode.trim(),
+                        
+                        // 新增的屬性
+                        spec: spec.trim(),
+                        unit: unit.trim(),
+                        priceDiff: priceDiff,
+
                         licenseHolder: licenseHolder.trim(),
                         manufacturer: manufacturer.trim(),
-                        
                         note: note.trim()
                     };
                 }).filter(d => d !== null);
@@ -337,13 +365,10 @@
                 return keyword.value || searchCode.value || searchTrade.value || searchComponent.value;
             });
             
-            // === 核心篩選邏輯 ===
             const filteredDrugs = computed(() => {
                 let result = drugs.value;
 
-                // 1. 精準欄位搜尋
                 if (searchCode.value) {
-                    // 同時搜尋「藥品代碼」與「健保代碼」
                     const fuseCode = new Fuse(result, { keys: ['code', 'nhiCode'], threshold: 0.0, ignoreLocation: true });
                     result = fuseCode.search(searchCode.value).map(r => r.item);
                 }
@@ -356,7 +381,6 @@
                     result = fuseComp.search(searchComponent.value).map(r => r.item);
                 }
 
-                // 2. 全域關鍵字搜尋
                 if (keyword.value) {
                     const k = keyword.value.trim();
                     if (result.length > 0) {
@@ -368,15 +392,13 @@
                 return result.sort((a, b) => a.code.localeCompare(b.code));
             });
 
-            const onSearchInput = () => { /* 觸發 computed */ };
-
+            const onSearchInput = () => { };
             const resetToHome = () => { 
                 keyword.value = ''; 
                 searchCode.value = '';
                 searchTrade.value = '';
                 searchComponent.value = '';
             };
-
             const openDetail = (drug) => selectedDrug.value = drug;
             const closeDetail = () => selectedDrug.value = null;
 
