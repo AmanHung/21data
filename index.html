@@ -13,7 +13,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
         .card-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #14b8a6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
@@ -73,7 +73,7 @@
                     v-model="searchTrade" 
                     @input="onSearchInput"
                     type="text" 
-                    placeholder="商品名 (Trade Name)" 
+                    placeholder="英文商品名" 
                     class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
                 >
                 <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
@@ -105,7 +105,7 @@
         <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-20 text-gray-400">
             <div class="bg-gray-100 p-6 rounded-full mb-4"><i class="fa-solid fa-magnifying-glass text-4xl text-gray-300"></i></div>
             <p class="font-bold text-gray-500">請輸入關鍵字進行查詢</p>
-            <p class="text-sm mt-1">支援藥碼、商品名、成份或全域搜尋</p>
+            <p class="text-sm mt-1">支援藥碼、商品名、成份搜尋</p>
         </div>
 
         <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
@@ -124,10 +124,10 @@
                     v-for="drug in filteredDrugs" 
                     :key="drug.code" 
                     @click="openDetail(drug)"
-                    class="bg-white rounded-xl p-3 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full flex flex-col hover:border-teal-300"
+                    class="bg-white rounded-xl p-3 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full flex flex-col hover:border-teal-300 group"
                 >
                     <div class="flex items-start mt-2 flex-1">
-                        <div class="w-14 h-14 bg-teal-50 rounded-lg flex-shrink-0 mr-3 overflow-hidden border border-teal-100 flex items-center justify-center text-teal-300">
+                        <div class="w-14 h-14 bg-teal-50 rounded-lg flex-shrink-0 mr-3 overflow-hidden border border-teal-100 flex items-center justify-center text-teal-400 group-hover:text-teal-600 group-hover:bg-teal-100 transition">
                              <i class="fa-solid fa-pills text-2xl"></i>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -139,9 +139,10 @@
                                 <span v-if="drug.component"><i class="fa-solid fa-flask mr-1 text-gray-300"></i>{{ drug.component }}</span>
                                 <span v-else>無成份資料</span>
                             </p>
-                            <p v-if="drug.spec || drug.unit" class="text-gray-400 text-[10px] mt-1">
-                                {{ drug.spec }} {{ drug.unit }}
-                            </p>
+                            <div class="flex gap-2 mt-1">
+                                <span v-if="drug.nhiCode" class="text-[10px] bg-blue-50 text-blue-600 px-1.5 rounded border border-blue-100 truncate">健保: {{ drug.nhiCode }}</span>
+                                <span v-if="drug.manufacturer" class="text-[10px] bg-gray-50 text-gray-500 px-1.5 rounded border border-gray-100 truncate flex-1">{{ drug.manufacturer }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -150,11 +151,12 @@
     </main>
 
     <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
-        <div class="bg-white w-full max-w-md md:max-w-2xl h-[80vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
-            <div class="flex justify-between items-start p-3 border-b bg-gray-50">
+        <div class="bg-white w-full max-w-md md:max-w-2xl h-[85vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
+            <div class="flex justify-between items-start p-4 border-b bg-gray-50">
                 <div class="flex-1 pr-2 min-w-0">
-                    <h2 class="font-bold text-lg leading-tight break-words text-gray-800">{{ selectedDrug.tradeName }}</h2>
-                    <span class="text-xs text-gray-500 font-mono">{{ selectedDrug.code }}</span>
+                    <div v-if="selectedDrug.itemNo" class="text-[10px] text-gray-400 mb-1">項次: {{ selectedDrug.itemNo }}</div>
+                    <h2 class="font-bold text-xl leading-tight break-words text-gray-800 mb-1">{{ selectedDrug.tradeName }}</h2>
+                    <span class="bg-teal-100 text-teal-800 text-xs px-2 py-0.5 rounded font-mono font-bold">{{ selectedDrug.code }}</span>
                 </div>
                 <button @click="closeDetail" class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition flex-shrink-0 mt-1"><i class="fa-solid fa-times"></i></button>
             </div>
@@ -163,51 +165,69 @@
                 
                 <section class="bg-teal-50 rounded-xl p-4 border border-teal-100">
                     <h3 class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-2 border-b border-teal-200 pb-1">基本資料</h3>
-                    <div class="space-y-2">
-                        <div class="grid grid-cols-1 gap-2">
-                            <div>
-                                <span class="text-xs text-gray-500 block">商品名</span>
-                                <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.tradeName }}</span>
-                            </div>
-                            <div>
-                                <span class="text-xs text-gray-500 block">藥品代碼</span>
-                                <span class="text-gray-900 font-mono select-all">{{ selectedDrug.code }}</span>
-                            </div>
-                            <div>
-                                <span class="text-xs text-gray-500 block">成份 (Component)</span>
-                                <span class="text-gray-900 font-medium select-all">{{ selectedDrug.component || '-' }}</span>
-                            </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div>
+                            <span class="text-xs text-gray-500 block">英文商品名</span>
+                            <span class="text-gray-900 font-bold select-all">{{ selectedDrug.tradeName }}</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block">成份 (Component)</span>
+                            <span class="text-gray-900 font-medium select-all">{{ selectedDrug.component || '-' }}</span>
                         </div>
                     </div>
                 </section>
 
-                <section v-if="selectedDrug.spec || selectedDrug.unit || selectedDrug.price">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">規格與價格</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div v-if="selectedDrug.spec">
-                            <span class="text-xs text-gray-500 block">規格</span>
-                            <span class="text-gray-800">{{ selectedDrug.spec }}</span>
+                <section class="border rounded-xl p-4 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                        <i class="fa-solid fa-tags mr-1.5"></i> 價格與代碼
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-2 rounded">
+                            <span class="text-xs text-gray-500 block mb-1">健保代碼</span>
+                            <span class="text-blue-700 font-bold font-mono select-all">{{ selectedDrug.nhiCode || '-' }}</span>
                         </div>
-                        <div v-if="selectedDrug.unit">
-                            <span class="text-xs text-gray-500 block">單位</span>
-                            <span class="text-gray-800">{{ selectedDrug.unit }}</span>
+                        <div class="bg-gray-50 p-2 rounded">
+                            <span class="text-xs text-gray-500 block mb-1">藥品代碼</span>
+                            <span class="text-gray-700 font-bold font-mono select-all">{{ selectedDrug.code }}</span>
                         </div>
-                        <div v-if="selectedDrug.price">
-                            <span class="text-xs text-gray-500 block">參考價格</span>
-                            <span class="text-red-600 font-bold">{{ selectedDrug.price }}</span>
+                        <div class="bg-gray-50 p-2 rounded border-l-4 border-blue-400">
+                            <span class="text-xs text-gray-500 block mb-1">健保價</span>
+                            <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.nhiPrice ? '$' + selectedDrug.nhiPrice : '-' }}</span>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded border-l-4 border-orange-400">
+                            <span class="text-xs text-gray-500 block mb-1">成本價</span>
+                            <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.costPrice ? '$' + selectedDrug.costPrice : '-' }}</span>
                         </div>
                     </div>
                 </section>
 
-                <section v-if="selectedDrug.note">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">備註/其他資訊</h3>
-                    <p class="text-sm text-gray-700 whitespace-pre-line">{{ selectedDrug.note }}</p>
+                <section class="border rounded-xl p-4 shadow-sm">
+                     <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center">
+                        <i class="fa-solid fa-industry mr-1.5"></i> 廠商資訊
+                    </h3>
+                    <div class="space-y-3">
+                        <div v-if="selectedDrug.manufacturer">
+                            <span class="text-xs text-gray-500 block">廠牌</span>
+                            <span class="text-gray-800 font-medium">{{ selectedDrug.manufacturer }}</span>
+                        </div>
+                        <div v-if="selectedDrug.licenseHolder">
+                            <span class="text-xs text-gray-500 block">許可證藥商簡稱</span>
+                            <span class="text-gray-800">{{ selectedDrug.licenseHolder }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                    <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
+                        <i class="fa-regular fa-note-sticky mr-1.5"></i> 備註
+                    </h3>
+                    <p class="text-sm text-yellow-900 whitespace-pre-line">{{ selectedDrug.note }}</p>
                 </section>
 
             </div>
             
-            <div class="p-3 border-t bg-gray-50">
-                <button @click="closeDetail" class="w-full bg-teal-600 text-white py-2.5 rounded-lg text-center font-bold text-sm shadow-md active:bg-teal-700 hover:bg-teal-700 transition">確定</button>
+            <div class="p-4 border-t bg-gray-50">
+                <button @click="closeDetail" class="w-full bg-teal-600 text-white py-3 rounded-xl text-center font-bold text-sm shadow-md active:bg-teal-700 hover:bg-teal-700 transition">確定</button>
             </div>
         </div>
     </div>
@@ -217,7 +237,6 @@
     const { createApp, ref, computed, onMounted } = Vue;
 
     // ============== 資料來源設定 ==============
-    // 請將下方的連結確認為您的目標 CSV 連結
     const DRUG_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHgmHy3x23WyXKIlgiowfBJgtChyc-VyD4WoxBqM8d0tqQcvxuGN1MLaLMv_GRwegncVrw2Me5QSS/pub?output=csv';
     
     createApp({
@@ -225,8 +244,8 @@
             // === 搜尋狀態 ===
             const keyword = ref('');
             const searchCode = ref('');
-            const searchTrade = ref('');
-            const searchComponent = ref(''); // 新增：成份搜尋
+            const searchTrade = ref(''); // 對應「英文商品名」
+            const searchComponent = ref(''); 
             // =============================
 
             const drugs = ref([]);
@@ -236,12 +255,14 @@
             
             let fuse = null;
             
-            // Fuse.js 全域搜尋權重設定
+            // Fuse.js 搜尋權重與欄位設定
             const fuseOptions = {
                 keys: [
                     { name: 'code', weight: 0.2 },        
                     { name: 'tradeName', weight: 0.4 },   
                     { name: 'component', weight: 0.3 }, 
+                    { name: 'nhiCode', weight: 0.2 }, // 加入健保碼搜尋
+                    { name: 'manufacturer', weight: 0.1 },
                     { name: 'note', weight: 0.1 }
                 ],
                 threshold: 0.3,       
@@ -268,31 +289,42 @@
             };
 
            const processData = (rawData) => {
-                // 如果 CSV 欄位名稱不同，請在此修改 map 邏輯
+                // === 資料欄位對應 (Mapping) ===
                 let processed = rawData.map(row => {
-                    // 1. 藥品代碼 (請確認 CSV 標頭是否為 '藥品代碼' 或 'Code')
+                    // 1. 藥品代碼 (必要)
                     const code = row['藥品代碼'] || row['Code'] || row['code'] || '';
-                    if(!code) return null; // 沒有代碼則略過
+                    if(!code) return null;
 
-                    // 2. 商品名 (請確認 CSV 標頭)
-                    const tradeName = row['商品名'] || row['Trade Name'] || row['Name'] || '無商品名';
+                    // 2. 英文商品名
+                    const tradeName = row['英文商品名'] || row['商品名'] || row['Trade Name'] || row['Name'] || '無英文商品名';
 
-                    // 3. 成份 (請確認 CSV 標頭)
-                    const component = row['成份'] || row['成分'] || row['Component'] || row['Ingredients'] || '';
+                    // 3. 成份
+                    const component = row['成份'] || row['成分'] || row['Component'] || '';
 
-                    // 其他可能欄位 (非必要，若 CSV 有這些欄位會自動顯示)
-                    const spec = row['規格'] || row['Spec'] || '';
-                    const unit = row['單位'] || row['Unit'] || '';
-                    const price = row['價格'] || row['Price'] || '';
+                    // 4. 新增欄位
+                    const itemNo = row['項次'] || '';
+                    const nhiPrice = row['健保價'] || '';
+                    const costPrice = row['成本價'] || '';
+                    const nhiCode = row['健保代碼'] || '';
+                    const licenseHolder = row['許可證藥商簡稱'] || '';
+                    const manufacturer = row['廠牌'] || '';
+
+                    // 其他
                     const note = row['備註'] || row['Note'] || '';
 
                     return {
                         code: code.trim(),
                         tradeName: tradeName.trim(),
                         component: component.trim(),
-                        spec: spec.trim(),
-                        unit: unit.trim(),
-                        price: price.trim(),
+                        
+                        // 新增的資料屬性
+                        itemNo: itemNo.trim(),
+                        nhiPrice: nhiPrice.trim(),
+                        costPrice: costPrice.trim(),
+                        nhiCode: nhiCode.trim(),
+                        licenseHolder: licenseHolder.trim(),
+                        manufacturer: manufacturer.trim(),
+                        
                         note: note.trim()
                     };
                 }).filter(d => d !== null);
@@ -301,7 +333,6 @@
                 fuse = new Fuse(processed, fuseOptions);
             };
 
-            // 判斷是否有任何搜尋條件
             const hasSearchQuery = computed(() => {
                 return keyword.value || searchCode.value || searchTrade.value || searchComponent.value;
             });
@@ -310,9 +341,10 @@
             const filteredDrugs = computed(() => {
                 let result = drugs.value;
 
-                // 1. 精準搜尋欄位 (使用 threshold: 0.0 極低容錯)
+                // 1. 精準欄位搜尋
                 if (searchCode.value) {
-                    const fuseCode = new Fuse(result, { keys: ['code'], threshold: 0.0, ignoreLocation: true });
+                    // 同時搜尋「藥品代碼」與「健保代碼」
+                    const fuseCode = new Fuse(result, { keys: ['code', 'nhiCode'], threshold: 0.0, ignoreLocation: true });
                     result = fuseCode.search(searchCode.value).map(r => r.item);
                 }
                 if (searchTrade.value) {
@@ -324,7 +356,7 @@
                     result = fuseComp.search(searchComponent.value).map(r => r.item);
                 }
 
-                // 2. 全域關鍵字搜尋 (如果上方篩選後還有結果，再進行關鍵字過濾)
+                // 2. 全域關鍵字搜尋
                 if (keyword.value) {
                     const k = keyword.value.trim();
                     if (result.length > 0) {
@@ -333,13 +365,10 @@
                     }
                 }
 
-                // 3. 排序 (依代碼排序)
                 return result.sort((a, b) => a.code.localeCompare(b.code));
             });
 
-            const onSearchInput = () => {
-                // 觸發重新計算 computed 即可，不需額外邏輯
-            };
+            const onSearchInput = () => { /* 觸發 computed */ };
 
             const resetToHome = () => { 
                 keyword.value = ''; 
