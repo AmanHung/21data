@@ -58,16 +58,17 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div class="relative">
                 <input 
-                    v-model="searchCode" 
+                    v-model="searchItemNo" 
                     @input="onSearchInput"
                     type="text" 
-                    placeholder="藥品代碼" 
+                    placeholder="項次" 
                     class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
                 >
-                <button v-if="searchCode" @click="searchCode=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
+                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
                     <i class="fa-solid fa-times-circle text-xs"></i>
                 </button>
             </div>
+            
             <div class="relative">
                 <input 
                     v-model="searchTrade" 
@@ -80,6 +81,7 @@
                     <i class="fa-solid fa-times-circle text-xs"></i>
                 </button>
             </div>
+            
             <div class="relative">
                 <input 
                     v-model="searchComponent" 
@@ -105,7 +107,7 @@
         <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-20 text-gray-400">
             <div class="bg-gray-100 p-6 rounded-full mb-4"><i class="fa-solid fa-magnifying-glass text-4xl text-gray-300"></i></div>
             <p class="font-bold text-gray-500">請輸入關鍵字進行查詢</p>
-            <p class="text-sm mt-1">支援藥碼、商品名、成份搜尋</p>
+            <p class="text-sm mt-1">支援項次、商品名、成份搜尋</p>
         </div>
 
         <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
@@ -259,7 +261,7 @@
     createApp({
         setup() {
             const keyword = ref('');
-            const searchCode = ref('');
+            const searchItemNo = ref(''); // 修改重點：改為 searchItemNo
             const searchTrade = ref('');
             const searchComponent = ref(''); 
             
@@ -277,7 +279,8 @@
                     { name: 'component', weight: 0.3 }, 
                     { name: 'nhiCode', weight: 0.2 },
                     { name: 'manufacturer', weight: 0.1 },
-                    { name: 'note', weight: 0.1 }
+                    { name: 'note', weight: 0.1 },
+                    { name: 'itemNo', weight: 0.1 } // 加入 itemNo 到全域搜尋權重
                 ],
                 threshold: 0.3,       
                 ignoreLocation: true,
@@ -316,7 +319,6 @@
                     const costPriceStr = row['成本價'] || '';
                     
                     const spec = row['規格'] || '';
-                    // 修改重點：讀取控制釋出劑型
                     const controlRelease = row['控制釋出劑型'] || '';
                     const unit = row['單位'] || '';
 
@@ -343,7 +345,7 @@
                         costPrice: costPriceStr.trim(),
                         nhiCode: nhiCode.trim(),
                         spec: spec.trim(),
-                        controlRelease: controlRelease.trim(), // 新增
+                        controlRelease: controlRelease.trim(),
                         unit: unit.trim(),
                         priceDiff: priceDiff,
                         licenseHolder: licenseHolder.trim(),
@@ -357,16 +359,18 @@
             };
 
             const hasSearchQuery = computed(() => {
-                return keyword.value || searchCode.value || searchTrade.value || searchComponent.value;
+                return keyword.value || searchItemNo.value || searchTrade.value || searchComponent.value;
             });
             
             const filteredDrugs = computed(() => {
                 let result = drugs.value;
 
-                if (searchCode.value) {
-                    const fuseCode = new Fuse(result, { keys: ['code', 'nhiCode'], threshold: 0.0, ignoreLocation: true });
-                    result = fuseCode.search(searchCode.value).map(r => r.item);
+                // 修改重點：搜尋邏輯改為比對 itemNo
+                if (searchItemNo.value) {
+                    const fuseItem = new Fuse(result, { keys: ['itemNo'], threshold: 0.0, ignoreLocation: true });
+                    result = fuseItem.search(searchItemNo.value).map(r => r.item);
                 }
+                
                 if (searchTrade.value) {
                     const fuseTrade = new Fuse(result, { keys: ['tradeName'], threshold: 0.1, ignoreLocation: true });
                     result = fuseTrade.search(searchTrade.value).map(r => r.item);
@@ -390,7 +394,7 @@
             const onSearchInput = () => { };
             const resetToHome = () => { 
                 keyword.value = ''; 
-                searchCode.value = '';
+                searchItemNo.value = ''; 
                 searchTrade.value = '';
                 searchComponent.value = '';
             };
@@ -400,7 +404,7 @@
             onMounted(() => { fetchAllData(); });
 
             return {
-                keyword, searchCode, searchTrade, searchComponent,
+                keyword, searchItemNo, searchTrade, searchComponent, // 回傳 searchItemNo
                 filteredDrugs, selectedDrug, loading, error, hasSearchQuery,
                 onSearchInput, resetToHome, openDetail, closeDetail
             };
