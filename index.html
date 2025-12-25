@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>藥品資料查詢系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
+        .card-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        [v-cloak] { display: none; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .error-modal { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; background: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 90%; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak class="w-full max-w-7xl mx-auto bg-white min-h-screen relative flex flex-col shadow-2xl">
+
+    <div v-if="error" class="error-modal">
+        <p class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 系統訊息</p>
+        <p class="text-sm">{{ error }}</p>
+        <button @click="error = ''" class="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded border border-red-300">關閉</button>
+    </div>
+
+    <header class="sticky top-0 bg-teal-600 p-4 shadow-md z-30">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-white text-lg font-bold flex items-center cursor-pointer" @click="resetToHome">
+                <i class="fa-solid fa-capsules mr-2"></i> 藥品資料查詢
+            </h1>
+            <button v-if="keyword || searchCode || searchTrade || searchComponent" @click="resetToHome" class="text-xs bg-teal-500 hover:bg-teal-400 text-white px-3 py-1 rounded-full transition border border-teal-400">
+                <i class="fa-solid fa-rotate-left mr-1"></i> 重置條件
+            </button>
+        </div>
+
+        <div class="relative mb-2">
+            <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+            <input 
+                v-model="keyword" 
+                @input="onSearchInput"
+                type="text" 
+                placeholder="全域搜尋：輸入任意關鍵字..." 
+                class="w-full pl-10 pr-10 py-2 rounded-lg border-none focus:ring-2 focus:ring-teal-300 outline-none shadow-inner"
+            >
+            <button v-if="keyword" @click="keyword=''; onSearchInput()" class="absolute right-3 top-3 text-gray-400">
+                <i class="fa-solid fa-times-circle"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="relative">
+                <input 
+                    v-model="searchCode" 
+                    @input="onSearchInput"
+                    type="text" 
+                    placeholder="藥品代碼" 
+                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                >
+                <button v-if="searchCode" @click="searchCode=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
+                    <i class="fa-solid fa-times-circle text-xs"></i>
+                </button>
+            </div>
+            <div class="relative">
+                <input 
+                    v-model="searchTrade" 
+                    @input="onSearchInput"
+                    type="text" 
+                    placeholder="商品名 (Trade Name)" 
+                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                >
+                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
+                    <i class="fa-solid fa-times-circle text-xs"></i>
+                </button>
+            </div>
+            <div class="relative">
+                <input 
+                    v-model="searchComponent" 
+                    @input="onSearchInput"
+                    type="text" 
+                    placeholder="成份 (Component)" 
+                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                >
+                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
+                    <i class="fa-solid fa-times-circle text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-3 safe-area-bottom overflow-y-auto bg-gray-50">
+        
+        <div v-if="loading" class="text-center py-20 text-gray-500">
+            <div class="loader"></div>
+            <p>正在載入資料庫...</p>
+        </div>
+
+        <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-20 text-gray-400">
+            <div class="bg-gray-100 p-6 rounded-full mb-4"><i class="fa-solid fa-magnifying-glass text-4xl text-gray-300"></i></div>
+            <p class="font-bold text-gray-500">請輸入關鍵字進行查詢</p>
+            <p class="text-sm mt-1">支援藥碼、商品名、成份或全域搜尋</p>
+        </div>
+
+        <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
+            <div class="px-2 mb-2 text-gray-500 text-xs font-bold flex justify-between items-center">
+                <span>搜尋結果</span>
+                <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{{ filteredDrugs.length }} 筆</span>
+            </div>
+
+            <div v-if="filteredDrugs.length === 0" class="text-center py-20 text-gray-400">
+                <i class="fa-regular fa-folder-open text-4xl mb-2"></i>
+                <p>找不到符合條件的藥品</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                    v-for="drug in filteredDrugs" 
+                    :key="drug.code" 
+                    @click="openDetail(drug)"
+                    class="bg-white rounded-xl p-3 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full flex flex-col hover:border-teal-300"
+                >
+                    <div class="flex items-start mt-2 flex-1">
+                        <div class="w-14 h-14 bg-teal-50 rounded-lg flex-shrink-0 mr-3 overflow-hidden border border-teal-100 flex items-center justify-center text-teal-300">
+                             <i class="fa-solid fa-pills text-2xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center mb-1">
+                                <span class="bg-gray-600 text-white text-[10px] px-1.5 py-0.5 rounded mr-2 font-mono">{{ drug.code }}</span>
+                                <h3 class="font-bold text-base leading-tight truncate text-teal-800">{{ drug.tradeName }}</h3>
+                            </div>
+                            <p class="text-gray-500 text-xs font-mono mb-1 truncate">
+                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-1 text-gray-300"></i>{{ drug.component }}</span>
+                                <span v-else>無成份資料</span>
+                            </p>
+                            <p v-if="drug.spec || drug.unit" class="text-gray-400 text-[10px] mt-1">
+                                {{ drug.spec }} {{ drug.unit }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </main>
+
+    <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
+        <div class="bg-white w-full max-w-md md:max-w-2xl h-[80vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
+            <div class="flex justify-between items-start p-3 border-b bg-gray-50">
+                <div class="flex-1 pr-2 min-w-0">
+                    <h2 class="font-bold text-lg leading-tight break-words text-gray-800">{{ selectedDrug.tradeName }}</h2>
+                    <span class="text-xs text-gray-500 font-mono">{{ selectedDrug.code }}</span>
+                </div>
+                <button @click="closeDetail" class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition flex-shrink-0 mt-1"><i class="fa-solid fa-times"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                
+                <section class="bg-teal-50 rounded-xl p-4 border border-teal-100">
+                    <h3 class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-2 border-b border-teal-200 pb-1">基本資料</h3>
+                    <div class="space-y-2">
+                        <div class="grid grid-cols-1 gap-2">
+                            <div>
+                                <span class="text-xs text-gray-500 block">商品名</span>
+                                <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.tradeName }}</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">藥品代碼</span>
+                                <span class="text-gray-900 font-mono select-all">{{ selectedDrug.code }}</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">成份 (Component)</span>
+                                <span class="text-gray-900 font-medium select-all">{{ selectedDrug.component || '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section v-if="selectedDrug.spec || selectedDrug.unit || selectedDrug.price">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">規格與價格</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div v-if="selectedDrug.spec">
+                            <span class="text-xs text-gray-500 block">規格</span>
+                            <span class="text-gray-800">{{ selectedDrug.spec }}</span>
+                        </div>
+                        <div v-if="selectedDrug.unit">
+                            <span class="text-xs text-gray-500 block">單位</span>
+                            <span class="text-gray-800">{{ selectedDrug.unit }}</span>
+                        </div>
+                        <div v-if="selectedDrug.price">
+                            <span class="text-xs text-gray-500 block">參考價格</span>
+                            <span class="text-red-600 font-bold">{{ selectedDrug.price }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section v-if="selectedDrug.note">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">備註/其他資訊</h3>
+                    <p class="text-sm text-gray-700 whitespace-pre-line">{{ selectedDrug.note }}</p>
+                </section>
+
+            </div>
+            
+            <div class="p-3 border-t bg-gray-50">
+                <button @click="closeDetail" class="w-full bg-teal-600 text-white py-2.5 rounded-lg text-center font-bold text-sm shadow-md active:bg-teal-700 hover:bg-teal-700 transition">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    // ============== 資料來源設定 ==============
+    // 請將下方的連結確認為您的目標 CSV 連結
+    const DRUG_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHgmHy3x23WyXKIlgiowfBJgtChyc-VyD4WoxBqM8d0tqQcvxuGN1MLaLMv_GRwegncVrw2Me5QSS/pub?output=csv';
+    
+    createApp({
+        setup() {
+            // === 搜尋狀態 ===
+            const keyword = ref('');
+            const searchCode = ref('');
+            const searchTrade = ref('');
+            const searchComponent = ref(''); // 新增：成份搜尋
+            // =============================
+
+            const drugs = ref([]);
+            const selectedDrug = ref(null);
+            const loading = ref(true);
+            const error = ref('');
+            
+            let fuse = null;
+            
+            // Fuse.js 全域搜尋權重設定
+            const fuseOptions = {
+                keys: [
+                    { name: 'code', weight: 0.2 },        
+                    { name: 'tradeName', weight: 0.4 },   
+                    { name: 'component', weight: 0.3 }, 
+                    { name: 'note', weight: 0.1 }
+                ],
+                threshold: 0.3,       
+                ignoreLocation: true,
+                useExtendedSearch: true
+            };
+
+            const fetchCsv = (url) => new Promise((resolve, reject) => {
+                Papa.parse(url, { download: true, header: true, skipEmptyLines: true, complete: (r) => resolve(r.data), error: (e) => reject(e) });
+            });
+
+            const fetchAllData = () => {
+                loading.value = true;
+                fetchCsv(DRUG_DATA_URL)
+                .then((drugData) => {
+                    processData(drugData);
+                    loading.value = false;
+                })
+                .catch(err => {
+                    console.error(err);
+                    error.value = "資料載入失敗，請檢查網路或 Google Sheet 連結設定。";
+                    loading.value = false;
+                });
+            };
+
+           const processData = (rawData) => {
+                // 如果 CSV 欄位名稱不同，請在此修改 map 邏輯
+                let processed = rawData.map(row => {
+                    // 1. 藥品代碼 (請確認 CSV 標頭是否為 '藥品代碼' 或 'Code')
+                    const code = row['藥品代碼'] || row['Code'] || row['code'] || '';
+                    if(!code) return null; // 沒有代碼則略過
+
+                    // 2. 商品名 (請確認 CSV 標頭)
+                    const tradeName = row['商品名'] || row['Trade Name'] || row['Name'] || '無商品名';
+
+                    // 3. 成份 (請確認 CSV 標頭)
+                    const component = row['成份'] || row['成分'] || row['Component'] || row['Ingredients'] || '';
+
+                    // 其他可能欄位 (非必要，若 CSV 有這些欄位會自動顯示)
+                    const spec = row['規格'] || row['Spec'] || '';
+                    const unit = row['單位'] || row['Unit'] || '';
+                    const price = row['價格'] || row['Price'] || '';
+                    const note = row['備註'] || row['Note'] || '';
+
+                    return {
+                        code: code.trim(),
+                        tradeName: tradeName.trim(),
+                        component: component.trim(),
+                        spec: spec.trim(),
+                        unit: unit.trim(),
+                        price: price.trim(),
+                        note: note.trim()
+                    };
+                }).filter(d => d !== null);
+
+                drugs.value = processed;
+                fuse = new Fuse(processed, fuseOptions);
+            };
+
+            // 判斷是否有任何搜尋條件
+            const hasSearchQuery = computed(() => {
+                return keyword.value || searchCode.value || searchTrade.value || searchComponent.value;
+            });
+            
+            // === 核心篩選邏輯 ===
+            const filteredDrugs = computed(() => {
+                let result = drugs.value;
+
+                // 1. 精準搜尋欄位 (使用 threshold: 0.0 極低容錯)
+                if (searchCode.value) {
+                    const fuseCode = new Fuse(result, { keys: ['code'], threshold: 0.0, ignoreLocation: true });
+                    result = fuseCode.search(searchCode.value).map(r => r.item);
+                }
+                if (searchTrade.value) {
+                    const fuseTrade = new Fuse(result, { keys: ['tradeName'], threshold: 0.1, ignoreLocation: true });
+                    result = fuseTrade.search(searchTrade.value).map(r => r.item);
+                }
+                if (searchComponent.value) {
+                    const fuseComp = new Fuse(result, { keys: ['component'], threshold: 0.1, ignoreLocation: true });
+                    result = fuseComp.search(searchComponent.value).map(r => r.item);
+                }
+
+                // 2. 全域關鍵字搜尋 (如果上方篩選後還有結果，再進行關鍵字過濾)
+                if (keyword.value) {
+                    const k = keyword.value.trim();
+                    if (result.length > 0) {
+                        const tempFuse = new Fuse(result, fuseOptions);
+                        result = tempFuse.search(k).map(res => res.item);
+                    }
+                }
+
+                // 3. 排序 (依代碼排序)
+                return result.sort((a, b) => a.code.localeCompare(b.code));
+            });
+
+            const onSearchInput = () => {
+                // 觸發重新計算 computed 即可，不需額外邏輯
+            };
+
+            const resetToHome = () => { 
+                keyword.value = ''; 
+                searchCode.value = '';
+                searchTrade.value = '';
+                searchComponent.value = '';
+            };
+
+            const openDetail = (drug) => selectedDrug.value = drug;
+            const closeDetail = () => selectedDrug.value = null;
+
+            onMounted(() => { fetchAllData(); });
+
+            return {
+                keyword, searchCode, searchTrade, searchComponent,
+                filteredDrugs, selectedDrug, loading, error, hasSearchQuery,
+                onSearchInput, resetToHome, openDetail, closeDetail
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
