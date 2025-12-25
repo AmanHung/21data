@@ -124,25 +124,29 @@
                     v-for="drug in filteredDrugs" 
                     :key="drug.code" 
                     @click="openDetail(drug)"
-                    class="bg-white rounded-xl p-3 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full flex flex-col hover:border-teal-300 group"
+                    class="bg-white rounded-xl p-4 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full hover:border-teal-300 group"
                 >
-                    <div class="flex items-start mt-2 flex-1">
-                        <div class="w-14 h-14 bg-teal-50 rounded-lg flex-shrink-0 mr-3 overflow-hidden border border-teal-100 flex items-center justify-center text-teal-400 group-hover:text-teal-600 group-hover:bg-teal-100 transition">
-                             <i class="fa-solid fa-pills text-2xl"></i>
+                    <div class="min-w-0">
+                        <div class="flex items-center mb-2">
+                            <span v-if="drug.itemNo" class="bg-gray-600 text-white text-[10px] px-1.5 py-0.5 rounded mr-2 font-mono flex-shrink-0">
+                                {{ drug.itemNo }}
+                            </span>
+                            <h3 class="font-bold text-base leading-tight truncate text-teal-800">{{ drug.tradeName }}</h3>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center mb-1">
-                                <span class="bg-gray-600 text-white text-[10px] px-1.5 py-0.5 rounded mr-2 font-mono">{{ drug.code }}</span>
-                                <h3 class="font-bold text-base leading-tight truncate text-teal-800">{{ drug.tradeName }}</h3>
-                            </div>
-                            <p class="text-gray-500 text-xs font-mono mb-1 truncate">
-                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-1 text-gray-300"></i>{{ drug.component }}</span>
-                                <span v-else>無成份資料</span>
-                            </p>
-                            <div class="flex gap-2 mt-1">
-                                <span v-if="drug.nhiCode" class="text-[10px] bg-blue-50 text-blue-600 px-1.5 rounded border border-blue-100 truncate">健保: {{ drug.nhiCode }}</span>
-                                <span v-if="drug.manufacturer" class="text-[10px] bg-gray-50 text-gray-500 px-1.5 rounded border border-gray-100 truncate flex-1">{{ drug.manufacturer }}</span>
-                            </div>
+                        
+                        <p class="text-gray-500 text-xs font-mono mb-2 truncate pl-0.5">
+                            <span v-if="drug.component"><i class="fa-solid fa-flask mr-1.5 text-gray-300"></i>{{ drug.component }}</span>
+                            <span v-else>無成份資料</span>
+                        </p>
+                        
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span v-if="drug.spec || drug.unit" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 truncate">
+                                <i class="fa-solid fa-ruler-combined mr-1 text-[9px] opacity-50"></i>{{ drug.spec }} {{ drug.unit }}
+                            </span>
+                            
+                            <span v-if="drug.manufacturer" class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100 truncate">
+                                {{ drug.manufacturer }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -307,50 +311,38 @@
                     const component = row['成份'] || row['成分'] || row['Component'] || '';
                     const itemNo = row['項次'] || '';
                     
-                    // 價格與代碼
                     const nhiCode = row['健保代碼'] || '';
                     const nhiPriceStr = row['健保價'] || '';
                     const costPriceStr = row['成本價'] || '';
                     
-                    // 規格與單位 (讀取 CSV)
                     const spec = row['規格'] || '';
                     const unit = row['單位'] || '';
 
-                    // 廠商資訊
                     const licenseHolder = row['許可證藥商簡稱'] || '';
                     const manufacturer = row['廠牌'] || '';
                     const note = row['備註'] || row['Note'] || '';
 
-                    // === 計算藥價差 ===
                     let priceDiff = '-';
-                    // 移除可能的貨幣符號或逗號以進行計算
                     const cleanNhi = parseFloat(nhiPriceStr.replace(/[$,]/g, ''));
                     const cleanCost = parseFloat(costPriceStr.replace(/[$,]/g, ''));
 
-                    // 只有當兩者都是有效數字時才計算
                     if (!isNaN(cleanNhi) && !isNaN(cleanCost)) {
                         const diff = cleanNhi - cleanCost;
-                        // 取小數點後兩位，若為整數則不顯示小數點
                         priceDiff = Number.isInteger(diff) ? diff.toString() : diff.toFixed(2);
-                        priceDiff = '$' + priceDiff; // 加個 $ 符號
+                        priceDiff = '$' + priceDiff;
                     }
-                    // ==================
 
                     return {
                         code: code.trim(),
                         tradeName: tradeName.trim(),
                         component: component.trim(),
                         itemNo: itemNo.trim(),
-                        
                         nhiPrice: nhiPriceStr.trim(),
                         costPrice: costPriceStr.trim(),
                         nhiCode: nhiCode.trim(),
-                        
-                        // 新增的屬性
                         spec: spec.trim(),
                         unit: unit.trim(),
                         priceDiff: priceDiff,
-
                         licenseHolder: licenseHolder.trim(),
                         manufacturer: manufacturer.trim(),
                         note: note.trim()
