@@ -279,11 +279,8 @@
                 </section>
 
                 <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2 flex items-center">
-                        <i class="fa-solid fa-tags mr-2"></i> 價格與代碼
-                    </h3>
                     <div class="grid grid-cols-1 gap-4">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="bg-gray-50 p-3 rounded-lg">
                                 <span class="text-xs text-gray-500 block mb-1">健保代碼</span>
                                 <span class="text-blue-700 font-bold font-mono select-all text-base">{{ selectedDrug.nhiCode || '-' }}</span>
@@ -291,6 +288,10 @@
                             <div class="bg-gray-50 p-3 rounded-lg">
                                 <span class="text-xs text-gray-500 block mb-1">廠牌</span>
                                 <span class="text-gray-800 font-medium truncate text-base">{{ selectedDrug.manufacturer || '-' }}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <span class="text-xs text-gray-500 block mb-1">產地</span>
+                                <span class="text-gray-800 font-medium truncate text-base">{{ selectedDrug.origin || '-' }}</span>
                             </div>
                         </div>
 
@@ -312,9 +313,6 @@
                 </section>
 
                 <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2 flex items-center">
-                        <i class="fa-solid fa-building mr-2"></i> 廠商資訊
-                    </h3>
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                              <div>
@@ -444,6 +442,7 @@
                     const fax = row['傳真'] || '';
 
                     const manufacturer = row['廠牌'] || '';
+                    const origin = row['產地'] || row['生產國別'] || row['Origin'] || ''; // 新增產地欄位抓取
                     const note = row['備註'] || row['Note'] || '';
 
                     let priceDiff = '-';
@@ -479,6 +478,7 @@
                         ext: ext.trim(),
                         fax: fax.trim(),
                         manufacturer: manufacturer.trim(),
+                        origin: origin.trim(), // 新增產地
                         note: note.trim()
                     };
                 }).filter(d => d !== null);
