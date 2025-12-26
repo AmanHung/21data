@@ -24,7 +24,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .error-modal { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; background: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 90%; text-align: center; }
         
-        /* 自定義捲軸樣式 (Chrome/Safari) */
+        /* 自定義捲軸樣式 */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 3px; }
@@ -33,338 +33,374 @@
 </head>
 <body>
 
-<div id="app" v-cloak class="w-full max-w-7xl mx-auto bg-white min-h-screen relative flex flex-col shadow-2xl">
+<div id="app" v-cloak class="w-full min-h-screen relative">
 
-    <div v-if="error" class="error-modal">
-        <p class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 系統訊息</p>
-        <p class="text-sm">{{ error }}</p>
-        <button @click="error = ''" class="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded border border-red-300">關閉</button>
-    </div>
-
-    <header class="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 p-5 shadow-lg z-30">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-white text-xl sm:text-2xl font-bold flex items-center cursor-pointer tracking-wide" @click="resetToHome">
-                <i class="fa-solid fa-capsules mr-3"></i> 藥品資料查詢
-            </h1>
-            
-            <div class="flex gap-2">
-                <button @click="showExportModal = true" class="text-sm bg-orange-700/30 hover:bg-orange-700/50 text-white px-3 py-1.5 rounded-lg transition border border-white/20 flex items-center shadow-sm">
-                    <i class="fa-solid fa-file-word mr-2"></i> 匯出報表
-                </button>
-
-                <button v-if="hasSearchQuery" @click="resetToHome" class="text-sm bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition border border-white/40 backdrop-blur-sm shadow-sm flex items-center">
-                    <i class="fa-solid fa-rotate-left mr-2"></i> 重置
-                </button>
-            </div>
-        </div>
-
-        <div class="relative mb-3">
-            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
-            <input 
-                v-model="keyword" 
-                @input="onSearchInput"
-                type="text" 
-                placeholder="全域搜尋：輸入任意關鍵字..." 
-                class="w-full pl-12 pr-12 py-3.5 text-lg rounded-xl border-none focus:ring-4 focus:ring-orange-300/50 outline-none shadow-lg placeholder-gray-400 text-gray-800"
-            >
-            <button v-if="keyword" @click="keyword=''; onSearchInput()" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
-                <i class="fa-solid fa-times-circle text-xl"></i>
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">項次</span>
+    <div v-if="!isAuthenticated" class="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center border-t-4 border-orange-500 animate-slide-up">
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-lock text-3xl text-orange-500"></i>
                 </div>
-                <input 
-                    v-model="searchItemNo" 
-                    @input="onSearchInput"
-                    type="text" 
-                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
-                >
-                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
-                    <i class="fa-solid fa-times-circle"></i>
-                </button>
+                <h2 class="text-2xl font-bold text-gray-800">系統鎖定</h2>
+                <p class="text-gray-500 text-sm mt-1">請輸入密碼以存取資料</p>
             </div>
             
-            <div class="relative group">
-                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">商品</span>
-                </div>
-                <input 
-                    v-model="searchTrade" 
-                    @input="onSearchInput"
-                    type="text" 
-                    placeholder="輸入英文商品名"
-                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
-                >
-                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
-                    <i class="fa-solid fa-times-circle"></i>
-                </button>
-            </div>
-            
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">成份</span>
-                </div>
-                <input 
-                    v-model="searchComponent" 
-                    @input="onSearchInput"
-                    type="text" 
-                    placeholder="輸入成份"
-                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
-                >
-                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
-                    <i class="fa-solid fa-times-circle"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="flex-1 p-4 safe-area-bottom overflow-y-auto bg-orange-50/30">
-        
-        <div v-if="loading" class="text-center py-24 text-gray-500">
-            <div class="loader"></div>
-            <p class="mt-4 text-orange-600 font-medium">資料庫連線中...</p>
-        </div>
-
-        <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-24 text-gray-400 animate-slide-up">
-            <div class="bg-orange-100 p-8 rounded-full mb-6 shadow-inner"><i class="fa-solid fa-magnifying-glass text-5xl text-orange-300"></i></div>
-            <p class="font-bold text-xl text-gray-600">歡迎使用藥品查詢系統</p>
-            <p class="text-sm mt-2 text-gray-500">請輸入上方的關鍵字開始查詢</p>
-        </div>
-
-        <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
-            <div class="px-2 mb-3 text-gray-500 text-sm font-bold flex justify-between items-center">
-                <span class="text-orange-600"><i class="fa-solid fa-list-ul mr-2"></i>搜尋結果</span>
-                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs shadow-sm">{{ filteredDrugs.length }} 筆資料</span>
-            </div>
-
-            <div v-if="filteredDrugs.length === 0" class="text-center py-24 text-gray-400">
-                <i class="fa-regular fa-folder-open text-5xl mb-4 text-orange-200"></i>
-                <p class="text-lg">找不到符合條件的藥品</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div 
-                    v-for="drug in filteredDrugs" 
-                    :key="drug.code" 
-                    @click="openDetail(drug)"
-                    class="bg-white rounded-2xl p-5 card-shadow border border-orange-100 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-full hover:border-orange-300 hover:shadow-md group"
-                >
-                    <div class="min-w-0">
-                        <div class="flex items-center mb-3">
-                            <span v-if="drug.itemNo" class="bg-gray-700 text-white text-xs px-2 py-1 rounded-md mr-2 font-mono flex-shrink-0 shadow-sm">
-                                {{ drug.itemNo }}
-                            </span>
-                            <h3 class="font-bold text-lg leading-tight truncate text-gray-800 group-hover:text-orange-600 transition">{{ drug.tradeName }}</h3>
-                        </div>
-                        
-                        <div class="flex items-center text-sm text-gray-500 font-mono mb-3 bg-gray-50 p-2 rounded-lg">
-                             <div class="flex-1 min-w-0 truncate mr-2">
-                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-2 text-orange-300"></i>{{ drug.component }}</span>
-                                <span v-else>無成份資料</span>
-                            </div>
-                            <div v-if="drug.spec || drug.unit" class="flex-shrink-0 text-gray-500 font-bold">
-                                {{ drug.spec }} {{ drug.unit }}
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-2 mt-1 items-center">
-                            <span v-if="drug.manufacturer" class="text-xs bg-white text-gray-600 px-2.5 py-1 rounded border border-gray-200 truncate font-medium shadow-sm">
-                                {{ drug.manufacturer }}
-                            </span>
-                            
-                            <span v-if="drug.nhiPrice" class="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded border border-blue-100 font-medium">
-                                健 ${{ drug.nhiPrice }}
-                            </span>
-
-                            <span v-if="drug.costPrice" class="text-xs bg-orange-50 text-orange-600 px-2.5 py-1 rounded border border-orange-100 font-medium">
-                                本 ${{ drug.costPrice }}
-                            </span>
-
-                            <span v-if="drug.priceDiff !== '-'" class="text-xs bg-purple-50 text-purple-600 px-2.5 py-1 rounded border border-purple-100 font-medium">
-                                差 {{ drug.priceDiff }}
-                            </span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-pills absolute -bottom-4 -right-4 text-6xl text-orange-50 opacity-50 group-hover:opacity-100 group-hover:text-orange-100 transition pointer-events-none"></i>
-                </div>
-            </div> 
-        </div>
-    </main>
-
-    <div v-if="showExportModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fade-in" @click.self="showExportModal = false">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-            <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4 flex justify-between items-center">
-                <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-file-word mr-2"></i>匯出 Word 報表</h3>
-                <button @click="showExportModal = false" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
-            </div>
-            <div class="p-6">
-                <p class="text-gray-600 text-sm mb-4">輸入項次整數（如 1995），系統將自動下載整理好的表格。</p>
-                
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">目標項次</label>
+            <div class="space-y-4">
+                <div class="relative">
                     <input 
-                        v-model="exportTarget" 
-                        type="number" 
-                        placeholder="例如: 1995"
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-300 outline-none text-lg font-mono"
-                        @keyup.enter="generateWordReport"
+                        v-model="inputPassword" 
+                        type="password" 
+                        placeholder="請輸入密碼" 
+                        class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-200/50 outline-none transition text-center text-lg tracking-widest"
+                        @keyup.enter="handleLogin"
                     >
                 </div>
+                
+                <p v-if="loginError" class="text-red-500 text-sm font-bold animate-pulse">
+                    <i class="fa-solid fa-circle-xmark mr-1"></i> 密碼錯誤
+                </p>
 
-                <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 mb-4 text-xs text-orange-800">
-                    <p class="font-bold mb-1"><i class="fa-solid fa-sort mr-1"></i>排序規則：</p>
-                    <ol class="list-decimal list-inside">
-                        <li>健保價 (由低到高)</li>
-                        <li>成本價 (由低到高)</li>
-                    </ol>
-                </div>
-
-                <button @click="generateWordReport" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl shadow-md transition flex justify-center items-center">
-                    <span v-if="!isExporting">確認下載</span>
-                    <span v-else><i class="fa-solid fa-spinner fa-spin mr-2"></i>處理中...</span>
+                <button @click="handleLogin" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-orange-200 active:scale-95 transition">
+                    解鎖進入 <i class="fa-solid fa-arrow-right ml-1"></i>
                 </button>
             </div>
+            <p class="mt-6 text-xs text-gray-400">本系統僅供內部使用</p>
         </div>
     </div>
 
-    <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
-        <div class="bg-white w-full max-w-md md:max-w-2xl h-[90vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
-            <div class="flex justify-between items-start p-5 border-b border-orange-100 bg-orange-50/50">
-                <div class="flex-1 pr-4 min-w-0">
-                    <div v-if="selectedDrug.itemNo" class="text-xs text-orange-500 font-bold mb-1 tracking-wide">項次 {{ selectedDrug.itemNo }}</div>
-                    <h2 class="font-bold text-2xl leading-tight break-words text-gray-800 mb-2">{{ selectedDrug.tradeName }}</h2>
-                    <span class="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded font-mono font-bold">{{ selectedDrug.code }}</span>
+    <div v-else class="w-full max-w-7xl mx-auto bg-white min-h-screen relative flex flex-col shadow-2xl animate-fade-in">
+        
+        <div v-if="error" class="error-modal">
+            <p class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 系統訊息</p>
+            <p class="text-sm">{{ error }}</p>
+            <button @click="error = ''" class="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded border border-red-300">關閉</button>
+        </div>
+
+        <header class="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 p-5 shadow-lg z-30">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-white text-xl sm:text-2xl font-bold flex items-center cursor-pointer tracking-wide" @click="resetToHome">
+                    <i class="fa-solid fa-capsules mr-3"></i> 藥品資料查詢
+                </h1>
+                
+                <div class="flex gap-2">
+                    <button @click="showExportModal = true" class="text-sm bg-orange-700/30 hover:bg-orange-700/50 text-white px-3 py-1.5 rounded-lg transition border border-white/20 flex items-center shadow-sm">
+                        <i class="fa-solid fa-file-word mr-2"></i> 匯出報表
+                    </button>
+                    <button @click="logout" class="text-sm bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition border border-white/40 backdrop-blur-sm shadow-sm flex items-center">
+                        <i class="fa-solid fa-lock mr-2"></i> 鎖定
+                    </button>
                 </div>
-                <button @click="closeDetail" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition flex-shrink-0 mt-1">
-                    <i class="fa-solid fa-times text-lg"></i>
+            </div>
+
+            <div class="relative mb-3">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                <input 
+                    v-model="keyword" 
+                    @input="onSearchInput"
+                    type="text" 
+                    placeholder="全域搜尋：輸入任意關鍵字..." 
+                    class="w-full pl-12 pr-12 py-3.5 text-lg rounded-xl border-none focus:ring-4 focus:ring-orange-300/50 outline-none shadow-lg placeholder-gray-400 text-gray-800"
+                >
+                <button v-if="keyword" @click="keyword=''; onSearchInput()" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
+                    <i class="fa-solid fa-times-circle text-xl"></i>
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-white">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                         <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">項次</span>
+                    </div>
+                    <input 
+                        v-model="searchItemNo" 
+                        @input="onSearchInput"
+                        type="text" 
+                        class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
+                    >
+                    <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
+                        <i class="fa-solid fa-times-circle"></i>
+                    </button>
+                </div>
                 
-                <section class="bg-orange-50/60 rounded-xl p-5 border border-orange-100">
-                    <div class="space-y-4">
-                        <div>
-                            <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">英文商品名</span>
-                            <span class="text-gray-900 font-bold text-lg select-all">{{ selectedDrug.tradeName }}</span>
-                        </div>
-                        <div>
-                            <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">成份 (Component)</span>
-                            <span class="text-gray-900 font-medium select-all text-base">{{ selectedDrug.component || '-' }}</span>
-                        </div>
-                        
-                        <div class="flex flex-wrap items-start gap-6 pt-2 border-t border-orange-200/50">
-                            <div class="min-w-[80px]">
-                                <span class="text-xs text-gray-500 block mb-1">規格</span>
-                                <span class="text-gray-800 font-bold text-base">{{ selectedDrug.spec || '-' }}</span>
-                            </div>
-                            <div v-if="selectedDrug.controlRelease" class="min-w-[100px]">
-                                <span class="text-xs text-gray-500 block mb-1">控制釋出劑型</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.controlRelease }}</span>
-                            </div>
-                            <div class="min-w-[50px]">
-                                <span class="text-xs text-gray-500 block mb-1">單位</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.unit || '-' }}</span>
-                            </div>
-                            <div v-if="selectedDrug.packagingQty" class="min-w-[80px]">
-                                <span class="text-xs text-gray-500 block mb-1">出貨包裝</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.packagingQty }}</span>
-                            </div>
-                        </div>
+                <div class="relative group">
+                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                         <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">商品</span>
                     </div>
-                </section>
-
-                <section class="space-y-4">
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col justify-center items-center text-center">
-                            <span class="text-xs text-blue-400 font-bold mb-1">健保價</span>
-                            <span class="text-blue-700 font-bold text-xl">{{ selectedDrug.nhiPrice ? '$' + selectedDrug.nhiPrice : '-' }}</span>
-                        </div>
-                        <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 flex flex-col justify-center items-center text-center">
-                            <span class="text-xs text-orange-400 font-bold mb-1">成本價</span>
-                            <span class="text-orange-700 font-bold text-xl">{{ selectedDrug.costPrice ? '$' + selectedDrug.costPrice : '-' }}</span>
-                        </div>
-                        <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 flex flex-col justify-center items-center text-center">
-                            <span class="text-xs text-purple-400 font-bold mb-1">藥價差</span>
-                            <span class="text-purple-700 font-bold text-xl select-all">{{ selectedDrug.priceDiff }}</span>
-                        </div>
+                    <input 
+                        v-model="searchTrade" 
+                        @input="onSearchInput"
+                        type="text" 
+                        placeholder="輸入英文商品名"
+                        class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
+                    >
+                    <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
+                        <i class="fa-solid fa-times-circle"></i>
+                    </button>
+                </div>
+                
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                         <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">成份</span>
                     </div>
+                    <input 
+                        v-model="searchComponent" 
+                        @input="onSearchInput"
+                        type="text" 
+                        placeholder="輸入成份"
+                        class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
+                    >
+                    <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
+                        <i class="fa-solid fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b pb-2 flex items-center">
-                            <i class="fa-solid fa-circle-info mr-2"></i> 詳細資訊
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                <span class="text-xs text-gray-500 font-bold mb-1 sm:mb-0">健保代碼</span>
-                                <span class="text-blue-600 font-bold font-mono text-lg select-all">{{ selectedDrug.nhiCode || '-' }}</span>
+        <main class="flex-1 p-4 safe-area-bottom overflow-y-auto bg-orange-50/30">
+            
+            <div v-if="loading" class="text-center py-24 text-gray-500">
+                <div class="loader"></div>
+                <p class="mt-4 text-orange-600 font-medium">安全連線中...</p>
+            </div>
+
+            <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-24 text-gray-400 animate-slide-up">
+                <div class="bg-orange-100 p-8 rounded-full mb-6 shadow-inner"><i class="fa-solid fa-magnifying-glass text-5xl text-orange-300"></i></div>
+                <p class="font-bold text-xl text-gray-600">歡迎使用藥品查詢系統</p>
+                <p class="text-sm mt-2 text-gray-500">請輸入上方的關鍵字開始查詢</p>
+            </div>
+
+            <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
+                <div class="px-2 mb-3 text-gray-500 text-sm font-bold flex justify-between items-center">
+                    <span class="text-orange-600"><i class="fa-solid fa-list-ul mr-2"></i>搜尋結果</span>
+                    <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs shadow-sm">{{ filteredDrugs.length }} 筆資料</span>
+                </div>
+
+                <div v-if="filteredDrugs.length === 0" class="text-center py-24 text-gray-400">
+                    <i class="fa-regular fa-folder-open text-5xl mb-4 text-orange-200"></i>
+                    <p class="text-lg">找不到符合條件的藥品</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div 
+                        v-for="drug in filteredDrugs" 
+                        :key="drug.code" 
+                        @click="openDetail(drug)"
+                        class="bg-white rounded-2xl p-5 card-shadow border border-orange-100 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-full hover:border-orange-300 hover:shadow-md group"
+                    >
+                        <div class="min-w-0">
+                            <div class="flex items-center mb-3">
+                                <span v-if="drug.itemNo" class="bg-gray-700 text-white text-xs px-2 py-1 rounded-md mr-2 font-mono flex-shrink-0 shadow-sm">
+                                    {{ drug.itemNo }}
+                                </span>
+                                <h3 class="font-bold text-lg leading-tight truncate text-gray-800 group-hover:text-orange-600 transition">{{ drug.tradeName }}</h3>
                             </div>
-
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <span class="text-xs text-gray-500 block mb-1">廠牌 (Manufacturer)</span>
-                                <span class="text-gray-800 font-medium text-base break-words leading-snug">{{ selectedDrug.manufacturer || '-' }}</span>
+                            
+                            <div class="flex items-center text-sm text-gray-500 font-mono mb-3 bg-gray-50 p-2 rounded-lg">
+                                 <div class="flex-1 min-w-0 truncate mr-2">
+                                    <span v-if="drug.component"><i class="fa-solid fa-flask mr-2 text-orange-300"></i>{{ drug.component }}</span>
+                                    <span v-else>無成份資料</span>
+                                </div>
+                                <div v-if="drug.spec || drug.unit" class="flex-shrink-0 text-gray-500 font-bold">
+                                    {{ drug.spec }} {{ drug.unit }}
+                                </div>
                             </div>
+                            
+                            <div class="flex flex-wrap gap-2 mt-1 items-center">
+                                <span v-if="drug.manufacturer" class="text-xs bg-white text-gray-600 px-2.5 py-1 rounded border border-gray-200 truncate font-medium shadow-sm">
+                                    {{ drug.manufacturer }}
+                                </span>
+                                
+                                <span v-if="drug.nhiPrice" class="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded border border-blue-100 font-medium">
+                                    健 ${{ drug.nhiPrice }}
+                                </span>
 
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <span class="text-xs text-gray-500 block mb-1">產地 (Origin)</span>
-                                <span class="text-gray-800 font-medium text-base break-words flex items-center">
-                                    <i class="fa-solid fa-earth-americas text-gray-300 mr-2"></i>
-                                    {{ selectedDrug.origin || '-' }}
+                                <span v-if="drug.costPrice" class="text-xs bg-orange-50 text-orange-600 px-2.5 py-1 rounded border border-orange-100 font-medium">
+                                    本 ${{ drug.costPrice }}
+                                </span>
+
+                                <span v-if="drug.priceDiff !== '-'" class="text-xs bg-purple-50 text-purple-600 px-2.5 py-1 rounded border border-purple-100 font-medium">
+                                    差 {{ drug.priceDiff }}
                                 </span>
                             </div>
                         </div>
+                        <i class="fa-solid fa-pills absolute -bottom-4 -right-4 text-6xl text-orange-50 opacity-50 group-hover:opacity-100 group-hover:text-orange-100 transition pointer-events-none"></i>
                     </div>
-                </section>
+                </div> 
+            </div>
+        </main>
 
-                <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                             <div>
-                                <span class="text-xs text-gray-500 block mb-1">許可證藥商簡稱</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.licenseHolder || '-' }}</span>
-                            </div>
-                             <div>
-                                <span class="text-xs text-gray-500 block mb-1">廠商簡稱</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.merchantShortName || '-' }}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-3 gap-2 pt-2" v-if="selectedDrug.phone || selectedDrug.ext || selectedDrug.fax">
-                             <div class="bg-gray-50 p-2 rounded">
-                                <span class="text-xs text-gray-400 block mb-1">電話</span>
-                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.phone || '-' }}</span>
-                            </div>
-                             <div class="bg-gray-50 p-2 rounded">
-                                <span class="text-xs text-gray-400 block mb-1">分機</span>
-                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.ext || '-' }}</span>
-                            </div>
-                             <div class="bg-gray-50 p-2 rounded">
-                                <span class="text-xs text-gray-400 block mb-1">傳真</span>
-                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.fax || '-' }}</span>
-                            </div>
-                        </div>
+        <div v-if="showExportModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fade-in" @click.self="showExportModal = false">
+            <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+                <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-file-word mr-2"></i>匯出 Word 報表</h3>
+                    <button @click="showExportModal = false" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 text-sm mb-4">輸入項次整數（如 1995），系統將自動下載整理好的表格。</p>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">目標項次</label>
+                        <input 
+                            v-model="exportTarget" 
+                            type="number" 
+                            placeholder="例如: 1995"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-300 outline-none text-lg font-mono"
+                            @keyup.enter="generateWordReport"
+                        >
                     </div>
-                </section>
 
-                <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-5 border border-yellow-200 shadow-sm">
-                    <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
-                        <i class="fa-regular fa-note-sticky mr-2"></i> 備註
-                    </h3>
-                    <p class="text-sm text-yellow-900 whitespace-pre-line leading-relaxed">{{ selectedDrug.note }}</p>
+                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 mb-4 text-xs text-orange-800">
+                        <p class="font-bold mb-1"><i class="fa-solid fa-sort mr-1"></i>排序規則：</p>
+                        <ol class="list-decimal list-inside">
+                            <li>健保價 (由低到高)</li>
+                            <li>成本價 (由低到高)</li>
+                        </ol>
+                    </div>
+
+                    <button @click="generateWordReport" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl shadow-md transition flex justify-center items-center">
+                        <span v-if="!isExporting">確認下載</span>
+                        <span v-else><i class="fa-solid fa-spinner fa-spin mr-2"></i>處理中...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
+            <div class="bg-white w-full max-w-md md:max-w-2xl h-[90vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
+                <div class="flex justify-between items-start p-5 border-b border-orange-100 bg-orange-50/50">
+                    <div class="flex-1 pr-4 min-w-0">
+                        <div v-if="selectedDrug.itemNo" class="text-xs text-orange-500 font-bold mb-1 tracking-wide">項次 {{ selectedDrug.itemNo }}</div>
+                        <h2 class="font-bold text-2xl leading-tight break-words text-gray-800 mb-2">{{ selectedDrug.tradeName }}</h2>
+                        <span class="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded font-mono font-bold">{{ selectedDrug.code }}</span>
+                    </div>
+                    <button @click="closeDetail" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition flex-shrink-0 mt-1">
+                        <i class="fa-solid fa-times text-lg"></i>
+                    </button>
                 </div>
 
-            </div>
-            
-            <div class="p-5 border-t border-gray-100 bg-gray-50">
-                <button @click="closeDetail" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl text-center font-bold text-base shadow-lg active:scale-[0.98] transition hover:shadow-orange-200">確定</button>
+                <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-white">
+                    
+                    <section class="bg-orange-50/60 rounded-xl p-5 border border-orange-100">
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">英文商品名</span>
+                                <span class="text-gray-900 font-bold text-lg select-all">{{ selectedDrug.tradeName }}</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">成份 (Component)</span>
+                                <span class="text-gray-900 font-medium select-all text-base">{{ selectedDrug.component || '-' }}</span>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-start gap-6 pt-2 border-t border-orange-200/50">
+                                <div class="min-w-[80px]">
+                                    <span class="text-xs text-gray-500 block mb-1">規格</span>
+                                    <span class="text-gray-800 font-bold text-base">{{ selectedDrug.spec || '-' }}</span>
+                                </div>
+                                <div v-if="selectedDrug.controlRelease" class="min-w-[100px]">
+                                    <span class="text-xs text-gray-500 block mb-1">控制釋出劑型</span>
+                                    <span class="text-gray-800 font-medium">{{ selectedDrug.controlRelease }}</span>
+                                </div>
+                                <div class="min-w-[50px]">
+                                    <span class="text-xs text-gray-500 block mb-1">單位</span>
+                                    <span class="text-gray-800 font-medium">{{ selectedDrug.unit || '-' }}</span>
+                                </div>
+                                <div v-if="selectedDrug.packagingQty" class="min-w-[80px]">
+                                    <span class="text-xs text-gray-500 block mb-1">出貨包裝</span>
+                                    <span class="text-gray-800 font-medium">{{ selectedDrug.packagingQty }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="space-y-4">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col justify-center items-center text-center">
+                                <span class="text-xs text-blue-400 font-bold mb-1">健保價</span>
+                                <span class="text-blue-700 font-bold text-xl">{{ selectedDrug.nhiPrice ? '$' + selectedDrug.nhiPrice : '-' }}</span>
+                            </div>
+                            <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 flex flex-col justify-center items-center text-center">
+                                <span class="text-xs text-orange-400 font-bold mb-1">成本價</span>
+                                <span class="text-orange-700 font-bold text-xl">{{ selectedDrug.costPrice ? '$' + selectedDrug.costPrice : '-' }}</span>
+                            </div>
+                            <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 flex flex-col justify-center items-center text-center">
+                                <span class="text-xs text-purple-400 font-bold mb-1">藥價差</span>
+                                <span class="text-purple-700 font-bold text-xl select-all">{{ selectedDrug.priceDiff }}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b pb-2 flex items-center">
+                                <i class="fa-solid fa-circle-info mr-2"></i> 詳細資訊
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-xs text-gray-500 font-bold mb-1 sm:mb-0">健保代碼</span>
+                                    <span class="text-blue-600 font-bold font-mono text-lg select-all">{{ selectedDrug.nhiCode || '-' }}</span>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-xs text-gray-500 block mb-1">廠牌 (Manufacturer)</span>
+                                    <span class="text-gray-800 font-medium text-base break-words leading-snug">{{ selectedDrug.manufacturer || '-' }}</span>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-xs text-gray-500 block mb-1">產地 (Origin)</span>
+                                    <span class="text-gray-800 font-medium text-base break-words flex items-center">
+                                        <i class="fa-solid fa-earth-americas text-gray-300 mr-2"></i>
+                                        {{ selectedDrug.origin || '-' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                 <div>
+                                    <span class="text-xs text-gray-500 block mb-1">許可證藥商簡稱</span>
+                                    <span class="text-gray-800 font-medium">{{ selectedDrug.licenseHolder || '-' }}</span>
+                                </div>
+                                 <div>
+                                    <span class="text-xs text-gray-500 block mb-1">廠商簡稱</span>
+                                    <span class="text-gray-800 font-medium">{{ selectedDrug.merchantShortName || '-' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-2 pt-2" v-if="selectedDrug.phone || selectedDrug.ext || selectedDrug.fax">
+                                 <div class="bg-gray-50 p-2 rounded">
+                                    <span class="text-xs text-gray-400 block mb-1">電話</span>
+                                    <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.phone || '-' }}</span>
+                                </div>
+                                 <div class="bg-gray-50 p-2 rounded">
+                                    <span class="text-xs text-gray-400 block mb-1">分機</span>
+                                    <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.ext || '-' }}</span>
+                                </div>
+                                 <div class="bg-gray-50 p-2 rounded">
+                                    <span class="text-xs text-gray-400 block mb-1">傳真</span>
+                                    <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.fax || '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-5 border border-yellow-200 shadow-sm">
+                        <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-regular fa-note-sticky mr-2"></i> 備註
+                        </h3>
+                        <p class="text-sm text-yellow-900 whitespace-pre-line leading-relaxed">{{ selectedDrug.note }}</p>
+                    </div>
+
+                </div>
+                
+                <div class="p-5 border-t border-gray-100 bg-gray-50">
+                    <button @click="closeDetail" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl text-center font-bold text-base shadow-lg active:scale-[0.98] transition hover:shadow-orange-200">確定</button>
+                </div>
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -373,8 +409,16 @@
     // ============== 資料來源設定 ==============
     const DRUG_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQFHgmHy3x23WyXKIlgiowfBJgtChyc-VyD4WoxBqM8d0tqQcvxuGN1MLaLMv_GRwegncVrw2Me5QSS/pub?output=csv';
     
+    // ============== 系統設定 ==============
+    const SYSTEM_PASSWORD = '8888'; // 設定您的存取密碼
+    
     createApp({
         setup() {
+            // 登入驗證狀態
+            const isAuthenticated = ref(false);
+            const inputPassword = ref('');
+            const loginError = ref(false);
+
             const keyword = ref('');
             const searchItemNo = ref(''); 
             const searchTrade = ref('');
@@ -410,6 +454,26 @@
             const fetchCsv = (url) => new Promise((resolve, reject) => {
                 Papa.parse(url, { download: true, header: true, skipEmptyLines: true, complete: (r) => resolve(r.data), error: (e) => reject(e) });
             });
+
+            // 登入處理
+            const handleLogin = () => {
+                if (inputPassword.value === SYSTEM_PASSWORD) {
+                    isAuthenticated.value = true;
+                    // 登入成功後才開始撈資料
+                    fetchAllData();
+                } else {
+                    loginError.value = true;
+                    inputPassword.value = '';
+                    setTimeout(() => loginError.value = false, 2000);
+                }
+            };
+            
+            // 登出
+            const logout = () => {
+                isAuthenticated.value = false;
+                inputPassword.value = '';
+                drugs.value = []; // 清空資料確保安全
+            };
 
             const fetchAllData = () => {
                 loading.value = true;
@@ -451,7 +515,7 @@
                     const fax = row['傳真'] || '';
 
                     const manufacturer = row['廠牌'] || '';
-                    const origin = row['產地'] || row['生產國別'] || row['Origin'] || ''; // 新增產地欄位抓取
+                    const origin = row['產地'] || row['生產國別'] || row['Origin'] || ''; 
                     const note = row['備註'] || row['Note'] || '';
 
                     let priceDiff = '-';
@@ -487,7 +551,7 @@
                         ext: ext.trim(),
                         fax: fax.trim(),
                         manufacturer: manufacturer.trim(),
-                        origin: origin.trim(), // 新增產地
+                        origin: origin.trim(),
                         note: note.trim()
                     };
                 }).filter(d => d !== null);
@@ -528,7 +592,6 @@
                 return result.sort((a, b) => a.code.localeCompare(b.code));
             });
 
-            // 匯出 Word 報表的主邏輯
             const generateWordReport = () => {
                 if (!exportTarget.value) {
                     alert("請輸入項次號碼");
@@ -537,7 +600,6 @@
                 isExporting.value = true;
                 const targetCode = String(exportTarget.value).trim();
 
-                // 1. 篩選資料 (比對項次小數點前的整數部分)
                 const reportData = drugs.value.filter(d => {
                      if (!d.itemNo) return false;
                      return d.itemNo.split('.')[0] === targetCode;
@@ -549,7 +611,6 @@
                     return;
                 }
 
-                // 2. 排序資料：健保價低優先 > 成本價低優先
                 reportData.sort((a, b) => {
                     if (a.nhiPriceNum !== b.nhiPriceNum) {
                         return a.nhiPriceNum - b.nhiPriceNum;
@@ -557,7 +618,6 @@
                     return a.costPriceNum - b.costPriceNum;
                 });
 
-                // 3. 建立 HTML 表格 (偽裝成 Word)
                 const columns = ['項次', '英文商品名', '成份/規格', '廠牌', '健保價', '成本價', '藥價差'];
                 
                 let tableRows = `<tr style="background-color: #f2f2f2; font-weight: bold;">`;
@@ -585,7 +645,6 @@
                     <table>${tableRows}</table>
                     </body></html>`;
 
-                // 4. 觸發下載
                 const blob = new Blob([htmlContent], { type: 'application/msword' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -609,14 +668,16 @@
             const openDetail = (drug) => selectedDrug.value = drug;
             const closeDetail = () => selectedDrug.value = null;
 
-            onMounted(() => { fetchAllData(); });
+            // 移除 onMounted 自動撈資料，改為登入後觸發
+            // onMounted(() => { fetchAllData(); });
 
             return {
                 keyword, searchItemNo, searchTrade, searchComponent, 
                 filteredDrugs, selectedDrug, loading, error, hasSearchQuery,
                 onSearchInput, resetToHome, openDetail, closeDetail,
-                // 匯出相關
-                showExportModal, exportTarget, generateWordReport, isExporting
+                showExportModal, exportTarget, generateWordReport, isExporting,
+                // 登入相關
+                isAuthenticated, inputPassword, loginError, handleLogin, logout
             };
         }
     }).mount('#app');
