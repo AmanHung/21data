@@ -206,6 +206,10 @@
                                 <span class="text-xs text-gray-500 block">單位</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.unit || '-' }}</span>
                             </div>
+                            <div v-if="selectedDrug.packagingQty" class="flex-1 min-w-[80px]">
+                                <span class="text-xs text-gray-500 block">出貨包裝數量</span>
+                                <span class="text-gray-800 font-medium">{{ selectedDrug.packagingQty }}</span>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -242,18 +246,41 @@
                     </div>
                 </section>
 
-                <div class="space-y-4">
-                     <div v-if="selectedDrug.licenseHolder" class="px-2">
-                        <span class="text-xs text-gray-400 block mb-1">許可證藥商簡稱</span>
-                        <span class="text-gray-700 font-medium">{{ selectedDrug.licenseHolder }}</span>
+                <section class="border rounded-xl p-4 shadow-sm bg-white">
+                    <div class="space-y-4">
+                         <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <span class="text-xs text-gray-500 block mb-1">許可證藥商簡稱</span>
+                                <span class="text-gray-800 font-medium">{{ selectedDrug.licenseHolder || '-' }}</span>
+                            </div>
+                             <div>
+                                <span class="text-xs text-gray-500 block mb-1">藥商簡稱</span>
+                                <span class="text-gray-800 font-medium">{{ selectedDrug.merchantShortName || '-' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2 border-t pt-3" v-if="selectedDrug.phone || selectedDrug.ext || selectedDrug.fax">
+                             <div>
+                                <span class="text-xs text-gray-500 block mb-1">電話</span>
+                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.phone || '-' }}</span>
+                            </div>
+                             <div>
+                                <span class="text-xs text-gray-500 block mb-1">分機</span>
+                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.ext || '-' }}</span>
+                            </div>
+                             <div>
+                                <span class="text-xs text-gray-500 block mb-1">傳真</span>
+                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.fax || '-' }}</span>
+                            </div>
+                        </div>
                     </div>
+                </section>
 
-                    <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                        <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
-                            <i class="fa-regular fa-note-sticky mr-1.5"></i> 備註
-                        </h3>
-                        <p class="text-sm text-yellow-900 whitespace-pre-line">{{ selectedDrug.note }}</p>
-                    </div>
+                <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                    <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
+                        <i class="fa-regular fa-note-sticky mr-1.5"></i> 備註
+                    </h3>
+                    <p class="text-sm text-yellow-900 whitespace-pre-line">{{ selectedDrug.note }}</p>
                 </div>
 
             </div>
@@ -334,8 +361,14 @@
                     const spec = row['規格'] || '';
                     const controlRelease = row['控制釋出劑型'] || '';
                     const unit = row['單位'] || '';
+                    const packagingQty = row['出貨包裝數量'] || ''; // 新增
 
                     const licenseHolder = row['許可證藥商簡稱'] || '';
+                    const merchantShortName = row['藥商簡稱'] || '';
+                    const phone = row['電話'] || '';
+                    const ext = row['分機'] || '';
+                    const fax = row['傳真'] || '';
+
                     const manufacturer = row['廠牌'] || '';
                     const note = row['備註'] || row['Note'] || '';
 
@@ -360,8 +393,13 @@
                         spec: spec.trim(),
                         controlRelease: controlRelease.trim(),
                         unit: unit.trim(),
+                        packagingQty: packagingQty.trim(), // 新增
                         priceDiff: priceDiff,
                         licenseHolder: licenseHolder.trim(),
+                        merchantShortName: merchantShortName.trim(),
+                        phone: phone.trim(),
+                        ext: ext.trim(),
+                        fax: fax.trim(),
                         manufacturer: manufacturer.trim(),
                         note: note.trim()
                     };
