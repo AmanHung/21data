@@ -66,47 +66,47 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-100 font-bold text-sm">項次</span>
+                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">項次</span>
                 </div>
                 <input 
                     v-model="searchItemNo" 
                     @input="onSearchInput"
                     type="text" 
-                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
+                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
                 >
-                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
                     <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
             
             <div class="relative group">
                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-100 font-bold text-sm">商品</span>
+                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">商品</span>
                 </div>
                 <input 
                     v-model="searchTrade" 
                     @input="onSearchInput"
                     type="text" 
                     placeholder="輸入英文商品名"
-                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
+                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
                 >
-                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
                     <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
             
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <span class="text-orange-100 font-bold text-sm">成份</span>
+                     <span class="text-orange-600 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded">成份</span>
                 </div>
                 <input 
                     v-model="searchComponent" 
                     @input="onSearchInput"
                     type="text" 
                     placeholder="輸入成份"
-                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
+                    class="w-full pl-20 pr-10 py-3 text-base font-medium rounded-xl border-none bg-white text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-orange-300/50 outline-none transition shadow-md"
                 >
-                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
                     <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
