@@ -254,7 +254,7 @@
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.licenseHolder || '-' }}</span>
                             </div>
                              <div>
-                                <span class="text-xs text-gray-500 block mb-1">藥商簡稱</span>
+                                <span class="text-xs text-gray-500 block mb-1">廠商簡稱</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.merchantShortName || '-' }}</span>
                             </div>
                         </div>
@@ -361,10 +361,12 @@
                     const spec = row['規格'] || '';
                     const controlRelease = row['控制釋出劑型'] || '';
                     const unit = row['單位'] || '';
-                    const packagingQty = row['出貨包裝數量'] || ''; // 新增
+                    const packagingQty = row['出貨包裝數量'] || ''; 
 
                     const licenseHolder = row['許可證藥商簡稱'] || '';
-                    const merchantShortName = row['藥商簡稱'] || '';
+                    
+                    // 修改重點：改為讀取「廠商簡稱」
+                    const merchantShortName = row['廠商簡稱'] || row['藥商簡稱'] || '';
                     const phone = row['電話'] || '';
                     const ext = row['分機'] || '';
                     const fax = row['傳真'] || '';
@@ -393,7 +395,7 @@
                         spec: spec.trim(),
                         controlRelease: controlRelease.trim(),
                         unit: unit.trim(),
-                        packagingQty: packagingQty.trim(), // 新增
+                        packagingQty: packagingQty.trim(),
                         priceDiff: priceDiff,
                         licenseHolder: licenseHolder.trim(),
                         merchantShortName: merchantShortName.trim(),
