@@ -10,15 +10,23 @@
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
-        .card-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* 背景改為極淡的暖灰色，更護眼 */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff7ed; }
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #14b8a6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        /* 載入動畫改為橘色 */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .error-modal { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; background: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 90%; text-align: center; }
+        
+        /* 自定義捲軸樣式 (Chrome/Safari) */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f97316; }
     </style>
 </head>
 <body>
@@ -31,224 +39,239 @@
         <button @click="error = ''" class="mt-2 text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded border border-red-300">關閉</button>
     </div>
 
-    <header class="sticky top-0 bg-teal-600 p-4 shadow-md z-30">
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-white text-lg font-bold flex items-center cursor-pointer" @click="resetToHome">
-                <i class="fa-solid fa-capsules mr-2"></i> 藥品資料查詢
+    <header class="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 p-5 shadow-lg z-30">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-white text-xl sm:text-2xl font-bold flex items-center cursor-pointer tracking-wide" @click="resetToHome">
+                <i class="fa-solid fa-capsules mr-3"></i> 藥品資料查詢
             </h1>
-            <button v-if="hasSearchQuery" @click="resetToHome" class="text-xs bg-teal-500 hover:bg-teal-400 text-white px-3 py-1 rounded-full transition border border-teal-400">
-                <i class="fa-solid fa-rotate-left mr-1"></i> 重置條件
+            <button v-if="hasSearchQuery" @click="resetToHome" class="text-sm bg-white/20 hover:bg-white/30 text-white px-4 py-1.5 rounded-full transition border border-white/40 backdrop-blur-sm shadow-sm flex items-center">
+                <i class="fa-solid fa-rotate-left mr-2"></i> 重置條件
             </button>
         </div>
 
-        <div class="relative mb-2">
-            <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+        <div class="relative mb-3">
+            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
             <input 
                 v-model="keyword" 
                 @input="onSearchInput"
                 type="text" 
                 placeholder="全域搜尋：輸入任意關鍵字..." 
-                class="w-full pl-10 pr-10 py-2 rounded-lg border-none focus:ring-2 focus:ring-teal-300 outline-none shadow-inner"
+                class="w-full pl-12 pr-12 py-3.5 text-lg rounded-xl border-none focus:ring-4 focus:ring-orange-300/50 outline-none shadow-lg placeholder-gray-400 text-gray-800"
             >
-            <button v-if="keyword" @click="keyword=''; onSearchInput()" class="absolute right-3 top-3 text-gray-400">
-                <i class="fa-solid fa-times-circle"></i>
+            <button v-if="keyword" @click="keyword=''; onSearchInput()" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-500 transition">
+                <i class="fa-solid fa-times-circle text-xl"></i>
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div class="relative">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <span class="text-orange-100 font-bold text-sm">項次</span>
+                </div>
                 <input 
                     v-model="searchItemNo" 
                     @input="onSearchInput"
                     type="text" 
-                    placeholder="項次" 
-                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
                 >
-                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
-                    <i class="fa-solid fa-times-circle text-xs"></i>
+                <button v-if="searchItemNo" @click="searchItemNo=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                    <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
             
-            <div class="relative">
+            <div class="relative group">
+                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <span class="text-orange-100 font-bold text-sm">商品</span>
+                </div>
                 <input 
                     v-model="searchTrade" 
                     @input="onSearchInput"
                     type="text" 
-                    placeholder="英文商品名" 
-                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                    placeholder="輸入英文商品名"
+                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
                 >
-                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
-                    <i class="fa-solid fa-times-circle text-xs"></i>
+                <button v-if="searchTrade" @click="searchTrade=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                    <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
             
-            <div class="relative">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <span class="text-orange-100 font-bold text-sm">成份</span>
+                </div>
                 <input 
                     v-model="searchComponent" 
                     @input="onSearchInput"
                     type="text" 
-                    placeholder="成份 (Component)" 
-                    class="w-full pl-3 pr-8 py-1.5 text-sm rounded-lg border border-teal-400 bg-teal-500 placeholder-teal-100 text-white focus:bg-teal-700 focus:ring-2 focus:ring-white outline-none"
+                    placeholder="輸入成份"
+                    class="w-full pl-14 pr-10 py-3 text-base font-medium rounded-xl border border-orange-400/50 bg-white/20 text-white placeholder-orange-100/70 focus:bg-white/30 focus:ring-2 focus:ring-white focus:border-transparent outline-none transition shadow-sm backdrop-blur-sm"
                 >
-                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-2 top-2 text-teal-200 hover:text-white">
-                    <i class="fa-solid fa-times-circle text-xs"></i>
+                <button v-if="searchComponent" @click="searchComponent=''; onSearchInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-200 hover:text-white transition">
+                    <i class="fa-solid fa-times-circle"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 p-3 safe-area-bottom overflow-y-auto bg-gray-50">
+    <main class="flex-1 p-4 safe-area-bottom overflow-y-auto bg-orange-50/30">
         
-        <div v-if="loading" class="text-center py-20 text-gray-500">
+        <div v-if="loading" class="text-center py-24 text-gray-500">
             <div class="loader"></div>
-            <p>正在載入資料庫...</p>
+            <p class="mt-4 text-orange-600 font-medium">資料庫連線中...</p>
         </div>
 
-        <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-20 text-gray-400">
-            <div class="bg-gray-100 p-6 rounded-full mb-4"><i class="fa-solid fa-magnifying-glass text-4xl text-gray-300"></i></div>
-            <p class="font-bold text-gray-500">請輸入關鍵字進行查詢</p>
-            <p class="text-sm mt-1">支援項次、商品名、成份搜尋</p>
+        <div v-if="!loading && !hasSearchQuery" class="flex flex-col items-center justify-center py-24 text-gray-400 animate-slide-up">
+            <div class="bg-orange-100 p-8 rounded-full mb-6 shadow-inner"><i class="fa-solid fa-magnifying-glass text-5xl text-orange-300"></i></div>
+            <p class="font-bold text-xl text-gray-600">歡迎使用藥品查詢系統</p>
+            <p class="text-sm mt-2 text-gray-500">請輸入上方的關鍵字開始查詢</p>
         </div>
 
         <div v-if="!loading && hasSearchQuery" class="animate-slide-up">
-            <div class="px-2 mb-2 text-gray-500 text-xs font-bold flex justify-between items-center">
-                <span>搜尋結果</span>
-                <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{{ filteredDrugs.length }} 筆</span>
+            <div class="px-2 mb-3 text-gray-500 text-sm font-bold flex justify-between items-center">
+                <span class="text-orange-600"><i class="fa-solid fa-list-ul mr-2"></i>搜尋結果</span>
+                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs shadow-sm">{{ filteredDrugs.length }} 筆資料</span>
             </div>
 
-            <div v-if="filteredDrugs.length === 0" class="text-center py-20 text-gray-400">
-                <i class="fa-regular fa-folder-open text-4xl mb-2"></i>
-                <p>找不到符合條件的藥品</p>
+            <div v-if="filteredDrugs.length === 0" class="text-center py-24 text-gray-400">
+                <i class="fa-regular fa-folder-open text-5xl mb-4 text-orange-200"></i>
+                <p class="text-lg">找不到符合條件的藥品</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div 
                     v-for="drug in filteredDrugs" 
                     :key="drug.code" 
                     @click="openDetail(drug)"
-                    class="bg-white rounded-xl p-4 card-shadow border border-gray-100 active:bg-blue-50 transition-colors cursor-pointer relative overflow-hidden h-full hover:border-teal-300 group"
+                    class="bg-white rounded-2xl p-5 card-shadow border border-orange-100 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-full hover:border-orange-300 hover:shadow-md group"
                 >
                     <div class="min-w-0">
-                        <div class="flex items-center mb-2">
-                            <span v-if="drug.itemNo" class="bg-gray-600 text-white text-[10px] px-1.5 py-0.5 rounded mr-2 font-mono flex-shrink-0">
+                        <div class="flex items-center mb-3">
+                            <span v-if="drug.itemNo" class="bg-gray-700 text-white text-xs px-2 py-1 rounded-md mr-2 font-mono flex-shrink-0 shadow-sm">
                                 {{ drug.itemNo }}
                             </span>
-                            <h3 class="font-bold text-base leading-tight truncate text-teal-800">{{ drug.tradeName }}</h3>
+                            <h3 class="font-bold text-lg leading-tight truncate text-gray-800 group-hover:text-orange-600 transition">{{ drug.tradeName }}</h3>
                         </div>
                         
-                        <div class="flex items-center text-xs text-gray-500 font-mono mb-2">
+                        <div class="flex items-center text-sm text-gray-500 font-mono mb-3 bg-gray-50 p-2 rounded-lg">
                              <div class="flex-1 min-w-0 truncate mr-2">
-                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-1.5 text-gray-300"></i>{{ drug.component }}</span>
+                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-2 text-orange-300"></i>{{ drug.component }}</span>
                                 <span v-else>無成份資料</span>
                             </div>
-                            <div v-if="drug.spec || drug.unit" class="flex-shrink-0 text-gray-400 bg-gray-50 px-1 rounded">
+                            <div v-if="drug.spec || drug.unit" class="flex-shrink-0 text-gray-500 font-bold">
                                 {{ drug.spec }} {{ drug.unit }}
                             </div>
                         </div>
                         
-                        <div class="flex flex-wrap gap-2 mt-2 items-center">
-                            <span v-if="drug.manufacturer" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200 truncate font-bold">
+                        <div class="flex flex-wrap gap-2 mt-1 items-center">
+                            <span v-if="drug.manufacturer" class="text-xs bg-white text-gray-600 px-2.5 py-1 rounded border border-gray-200 truncate font-medium shadow-sm">
                                 {{ drug.manufacturer }}
                             </span>
                             
-                            <span v-if="drug.nhiPrice" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">
-                                健:${{ drug.nhiPrice }}
+                            <span v-if="drug.nhiPrice" class="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded border border-blue-100 font-medium">
+                                健 ${{ drug.nhiPrice }}
                             </span>
 
-                            <span v-if="drug.costPrice" class="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded border border-orange-100">
-                                本:${{ drug.costPrice }}
+                            <span v-if="drug.costPrice" class="text-xs bg-orange-50 text-orange-600 px-2.5 py-1 rounded border border-orange-100 font-medium">
+                                本 ${{ drug.costPrice }}
                             </span>
 
-                            <span v-if="drug.priceDiff !== '-'" class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded border border-purple-100">
-                                差:{{ drug.priceDiff }}
+                            <span v-if="drug.priceDiff !== '-'" class="text-xs bg-purple-50 text-purple-600 px-2.5 py-1 rounded border border-purple-100 font-medium">
+                                差 {{ drug.priceDiff }}
                             </span>
                         </div>
                     </div>
+                    <i class="fa-solid fa-pills absolute -bottom-4 -right-4 text-6xl text-orange-50 opacity-50 group-hover:opacity-100 group-hover:text-orange-100 transition pointer-events-none"></i>
                 </div>
             </div> 
         </div>
     </main>
 
-    <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
+    <div v-if="selectedDrug" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" @click.self="closeDetail">
         <div class="bg-white w-full max-w-md md:max-w-2xl h-[90vh] sm:h-auto rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-slide-up max-h-[90vh]">
-            <div class="flex justify-between items-start p-4 border-b bg-gray-50">
-                <div class="flex-1 pr-2 min-w-0">
-                    <div v-if="selectedDrug.itemNo" class="text-[10px] text-gray-400 mb-1">項次: {{ selectedDrug.itemNo }}</div>
-                    <h2 class="font-bold text-xl leading-tight break-words text-gray-800 mb-1">{{ selectedDrug.tradeName }}</h2>
-                    <span class="bg-teal-100 text-teal-800 text-xs px-2 py-0.5 rounded font-mono font-bold">{{ selectedDrug.code }}</span>
+            <div class="flex justify-between items-start p-5 border-b border-orange-100 bg-orange-50/50">
+                <div class="flex-1 pr-4 min-w-0">
+                    <div v-if="selectedDrug.itemNo" class="text-xs text-orange-500 font-bold mb-1 tracking-wide">項次 {{ selectedDrug.itemNo }}</div>
+                    <h2 class="font-bold text-2xl leading-tight break-words text-gray-800 mb-2">{{ selectedDrug.tradeName }}</h2>
+                    <span class="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded font-mono font-bold">{{ selectedDrug.code }}</span>
                 </div>
-                <button @click="closeDetail" class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition flex-shrink-0 mt-1"><i class="fa-solid fa-times"></i></button>
+                <button @click="closeDetail" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition flex-shrink-0 mt-1">
+                    <i class="fa-solid fa-times text-lg"></i>
+                </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            <div class="flex-1 overflow-y-auto p-5 space-y-6 bg-white">
                 
-                <section class="bg-teal-50 rounded-xl p-4 border border-teal-100">
-                    <div class="space-y-3">
+                <section class="bg-orange-50/60 rounded-xl p-5 border border-orange-100">
+                    <div class="space-y-4">
                         <div>
-                            <span class="text-xs text-gray-500 block">英文商品名</span>
-                            <span class="text-gray-900 font-bold select-all">{{ selectedDrug.tradeName }}</span>
+                            <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">英文商品名</span>
+                            <span class="text-gray-900 font-bold text-lg select-all">{{ selectedDrug.tradeName }}</span>
                         </div>
                         <div>
-                            <span class="text-xs text-gray-500 block">成份 (Component)</span>
-                            <span class="text-gray-900 font-medium select-all">{{ selectedDrug.component || '-' }}</span>
+                            <span class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">成份 (Component)</span>
+                            <span class="text-gray-900 font-medium select-all text-base">{{ selectedDrug.component || '-' }}</span>
                         </div>
                         
-                        <div class="flex flex-wrap items-start gap-4 pt-1">
-                            <div class="flex-1 min-w-[100px]">
-                                <span class="text-xs text-gray-500 block">規格</span>
-                                <span class="text-gray-800 font-medium">{{ selectedDrug.spec || '-' }}</span>
+                        <div class="flex flex-wrap items-start gap-6 pt-2 border-t border-orange-200/50">
+                            <div class="min-w-[80px]">
+                                <span class="text-xs text-gray-500 block mb-1">規格</span>
+                                <span class="text-gray-800 font-bold text-base">{{ selectedDrug.spec || '-' }}</span>
                             </div>
-                            <div v-if="selectedDrug.controlRelease" class="flex-1 min-w-[100px]">
-                                <span class="text-xs text-gray-500 block">控制釋出劑型</span>
+                            <div v-if="selectedDrug.controlRelease" class="min-w-[100px]">
+                                <span class="text-xs text-gray-500 block mb-1">控制釋出劑型</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.controlRelease }}</span>
                             </div>
-                            <div class="flex-1 min-w-[60px]">
-                                <span class="text-xs text-gray-500 block">單位</span>
+                            <div class="min-w-[50px]">
+                                <span class="text-xs text-gray-500 block mb-1">單位</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.unit || '-' }}</span>
                             </div>
-                            <div v-if="selectedDrug.packagingQty" class="flex-1 min-w-[80px]">
-                                <span class="text-xs text-gray-500 block">出貨包裝數量</span>
+                            <div v-if="selectedDrug.packagingQty" class="min-w-[80px]">
+                                <span class="text-xs text-gray-500 block mb-1">出貨包裝</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.packagingQty }}</span>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <section class="border rounded-xl p-4 shadow-sm bg-white">
+                <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2 flex items-center">
+                        <i class="fa-solid fa-tags mr-2"></i> 價格與代碼
+                    </h3>
                     <div class="grid grid-cols-1 gap-4">
-                        
-                        <div class="grid grid-cols-2 gap-4 border-b pb-4">
-                            <div class="bg-gray-50 p-2 rounded">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
                                 <span class="text-xs text-gray-500 block mb-1">健保代碼</span>
-                                <span class="text-blue-700 font-bold font-mono select-all">{{ selectedDrug.nhiCode || '-' }}</span>
+                                <span class="text-blue-700 font-bold font-mono select-all text-base">{{ selectedDrug.nhiCode || '-' }}</span>
                             </div>
-                            <div class="bg-gray-50 p-2 rounded">
+                            <div class="bg-gray-50 p-3 rounded-lg">
                                 <span class="text-xs text-gray-500 block mb-1">廠牌</span>
-                                <span class="text-gray-800 font-medium truncate">{{ selectedDrug.manufacturer || '-' }}</span>
+                                <span class="text-gray-800 font-medium truncate text-base">{{ selectedDrug.manufacturer || '-' }}</span>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 gap-3">
-                             <div class="bg-gray-50 p-2 rounded border-l-4 border-blue-400">
+                             <div class="bg-blue-50/50 p-3 rounded-lg border-l-4 border-blue-400">
                                 <span class="text-xs text-gray-500 block mb-1">健保價</span>
                                 <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.nhiPrice ? '$' + selectedDrug.nhiPrice : '-' }}</span>
                             </div>
-                             <div class="bg-gray-50 p-2 rounded border-l-4 border-orange-400">
+                             <div class="bg-orange-50/50 p-3 rounded-lg border-l-4 border-orange-400">
                                 <span class="text-xs text-gray-500 block mb-1">成本價</span>
                                 <span class="text-gray-900 font-bold text-lg">{{ selectedDrug.costPrice ? '$' + selectedDrug.costPrice : '-' }}</span>
                             </div>
-                            <div class="bg-gray-50 p-2 rounded border-l-4 border-purple-400">
+                            <div class="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-400">
                                 <span class="text-xs text-gray-500 block mb-1">藥價差</span>
                                 <span class="text-gray-900 font-bold text-lg select-all">{{ selectedDrug.priceDiff }}</span>
                             </div>
                         </div>
-
                     </div>
                 </section>
 
-                <section class="border rounded-xl p-4 shadow-sm bg-white">
+                <section class="border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b pb-2 flex items-center">
+                        <i class="fa-solid fa-building mr-2"></i> 廠商資訊
+                    </h3>
                     <div class="space-y-4">
-                         <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
                              <div>
                                 <span class="text-xs text-gray-500 block mb-1">許可證藥商簡稱</span>
                                 <span class="text-gray-800 font-medium">{{ selectedDrug.licenseHolder || '-' }}</span>
@@ -259,34 +282,34 @@
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-3 gap-2 border-t pt-3" v-if="selectedDrug.phone || selectedDrug.ext || selectedDrug.fax">
-                             <div>
-                                <span class="text-xs text-gray-500 block mb-1">電話</span>
-                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.phone || '-' }}</span>
+                        <div class="grid grid-cols-3 gap-2 pt-2" v-if="selectedDrug.phone || selectedDrug.ext || selectedDrug.fax">
+                             <div class="bg-gray-50 p-2 rounded">
+                                <span class="text-xs text-gray-400 block mb-1">電話</span>
+                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.phone || '-' }}</span>
                             </div>
-                             <div>
-                                <span class="text-xs text-gray-500 block mb-1">分機</span>
-                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.ext || '-' }}</span>
+                             <div class="bg-gray-50 p-2 rounded">
+                                <span class="text-xs text-gray-400 block mb-1">分機</span>
+                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.ext || '-' }}</span>
                             </div>
-                             <div>
-                                <span class="text-xs text-gray-500 block mb-1">傳真</span>
-                                <span class="text-gray-800 font-medium select-all">{{ selectedDrug.fax || '-' }}</span>
+                             <div class="bg-gray-50 p-2 rounded">
+                                <span class="text-xs text-gray-400 block mb-1">傳真</span>
+                                <span class="text-gray-700 font-mono text-sm select-all">{{ selectedDrug.fax || '-' }}</span>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                <div v-if="selectedDrug.note" class="bg-yellow-50 rounded-xl p-5 border border-yellow-200 shadow-sm">
                     <h3 class="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center">
-                        <i class="fa-regular fa-note-sticky mr-1.5"></i> 備註
+                        <i class="fa-regular fa-note-sticky mr-2"></i> 備註
                     </h3>
-                    <p class="text-sm text-yellow-900 whitespace-pre-line">{{ selectedDrug.note }}</p>
+                    <p class="text-sm text-yellow-900 whitespace-pre-line leading-relaxed">{{ selectedDrug.note }}</p>
                 </div>
 
             </div>
             
-            <div class="p-4 border-t bg-gray-50">
-                <button @click="closeDetail" class="w-full bg-teal-600 text-white py-3 rounded-xl text-center font-bold text-sm shadow-md active:bg-teal-700 hover:bg-teal-700 transition">確定</button>
+            <div class="p-5 border-t border-gray-100 bg-gray-50">
+                <button @click="closeDetail" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl text-center font-bold text-base shadow-lg active:scale-[0.98] transition hover:shadow-orange-200">確定</button>
             </div>
         </div>
     </div>
@@ -365,7 +388,6 @@
 
                     const licenseHolder = row['許可證藥商簡稱'] || '';
                     
-                    // 修改重點：改為讀取「廠商簡稱」
                     const merchantShortName = row['廠商簡稱'] || row['藥商簡稱'] || '';
                     const phone = row['電話'] || '';
                     const ext = row['分機'] || '';
