@@ -136,18 +136,31 @@
                             <h3 class="font-bold text-base leading-tight truncate text-teal-800">{{ drug.tradeName }}</h3>
                         </div>
                         
-                        <p class="text-gray-500 text-xs font-mono mb-2 truncate pl-0.5">
-                            <span v-if="drug.component"><i class="fa-solid fa-flask mr-1.5 text-gray-300"></i>{{ drug.component }}</span>
-                            <span v-else>無成份資料</span>
-                        </p>
+                        <div class="flex items-center text-xs text-gray-500 font-mono mb-2">
+                             <div class="flex-1 min-w-0 truncate mr-2">
+                                <span v-if="drug.component"><i class="fa-solid fa-flask mr-1.5 text-gray-300"></i>{{ drug.component }}</span>
+                                <span v-else>無成份資料</span>
+                            </div>
+                            <div v-if="drug.spec || drug.unit" class="flex-shrink-0 text-gray-400 bg-gray-50 px-1 rounded">
+                                {{ drug.spec }} {{ drug.unit }}
+                            </div>
+                        </div>
                         
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <span v-if="drug.spec || drug.unit" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 truncate">
-                                <i class="fa-solid fa-ruler-combined mr-1 text-[9px] opacity-50"></i>{{ drug.spec }} {{ drug.unit }}
+                        <div class="flex flex-wrap gap-2 mt-2 items-center">
+                            <span v-if="drug.manufacturer" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200 truncate font-bold">
+                                {{ drug.manufacturer }}
                             </span>
                             
-                            <span v-if="drug.manufacturer" class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100 truncate">
-                                {{ drug.manufacturer }}
+                            <span v-if="drug.nhiPrice" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">
+                                健:${{ drug.nhiPrice }}
+                            </span>
+
+                            <span v-if="drug.costPrice" class="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded border border-orange-100">
+                                本:${{ drug.costPrice }}
+                            </span>
+
+                            <span v-if="drug.priceDiff !== '-'" class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded border border-purple-100">
+                                差:{{ drug.priceDiff }}
                             </span>
                         </div>
                     </div>
@@ -261,7 +274,7 @@
     createApp({
         setup() {
             const keyword = ref('');
-            const searchItemNo = ref(''); // 修改重點：改為 searchItemNo
+            const searchItemNo = ref(''); 
             const searchTrade = ref('');
             const searchComponent = ref(''); 
             
@@ -280,7 +293,7 @@
                     { name: 'nhiCode', weight: 0.2 },
                     { name: 'manufacturer', weight: 0.1 },
                     { name: 'note', weight: 0.1 },
-                    { name: 'itemNo', weight: 0.1 } // 加入 itemNo 到全域搜尋權重
+                    { name: 'itemNo', weight: 0.1 } 
                 ],
                 threshold: 0.3,       
                 ignoreLocation: true,
@@ -365,7 +378,6 @@
             const filteredDrugs = computed(() => {
                 let result = drugs.value;
 
-                // 修改重點：搜尋邏輯改為比對 itemNo
                 if (searchItemNo.value) {
                     const fuseItem = new Fuse(result, { keys: ['itemNo'], threshold: 0.0, ignoreLocation: true });
                     result = fuseItem.search(searchItemNo.value).map(r => r.item);
@@ -404,7 +416,7 @@
             onMounted(() => { fetchAllData(); });
 
             return {
-                keyword, searchItemNo, searchTrade, searchComponent, // 回傳 searchItemNo
+                keyword, searchItemNo, searchTrade, searchComponent, 
                 filteredDrugs, selectedDrug, loading, error, hasSearchQuery,
                 onSearchInput, resetToHome, openDetail, closeDetail
             };
